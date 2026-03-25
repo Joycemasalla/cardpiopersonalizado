@@ -54,8 +54,8 @@ const Login = () => {
         </button>
 
         <div className="text-center mb-8">
-          <span className="font-display text-2xl font-bold text-foreground">
-            menu<span className="text-primary">lab</span>
+          <span className="font-display text-2xl font-bold italic text-primary">
+            MenuLab
           </span>
           <p className="mt-2 text-muted-foreground text-sm">
             {isSignUp ? "Crie sua conta" : "Entre na sua conta"}
@@ -64,7 +64,7 @@ const Login = () => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">E-mail</Label>
+            <Label htmlFor="email" className="text-foreground">E-mail</Label>
             <Input
               id="email"
               type="email"
@@ -72,10 +72,11 @@ const Login = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              className="bg-secondary border-border text-foreground placeholder:text-muted-foreground"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Senha</Label>
+            <Label htmlFor="password" className="text-foreground">Senha</Label>
             <Input
               id="password"
               type="password"
@@ -84,9 +85,10 @@ const Login = () => {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
+              className="bg-secondary border-border text-foreground placeholder:text-muted-foreground"
             />
           </div>
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-semibold" disabled={loading}>
             {loading ? "Carregando..." : isSignUp ? "Criar Conta" : "Entrar"}
           </Button>
         </form>
