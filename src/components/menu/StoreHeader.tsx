@@ -1,66 +1,50 @@
 import type { Store } from "@/types/store";
-import { MapPin } from "lucide-react";
+import { MapPin, ShoppingCart, User, Search } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface StoreHeaderProps {
   store: Store;
+  cartCount?: number;
 }
 
-export const StoreHeader = ({ store }: StoreHeaderProps) => {
+export const StoreHeader = ({ store, cartCount = 0 }: StoreHeaderProps) => {
   return (
-    <header className="relative">
-      {store.banner_url ? (
-        <div className="h-48 md:h-64 overflow-hidden">
-          <img
-            src={store.banner_url}
-            alt={store.name}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-        </div>
-      ) : (
-        <div
-          className="h-48 md:h-64"
-          style={{ background: `linear-gradient(135deg, ${store.color_primary}, ${store.color_secondary})` }}
-        />
-      )}
-
-      <div className="container max-w-5xl px-4 relative">
-        <div className="flex items-end gap-4 -mt-12">
+    <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur-md">
+      <div className="flex items-center justify-between h-14 px-4 lg:px-8">
+        <div className="flex items-center gap-3">
           {store.logo_url ? (
-            <img
-              src={store.logo_url}
-              alt={store.name}
-              className="w-24 h-24 rounded-xl border-4 border-white shadow-lg object-cover bg-white"
-            />
-          ) : (
-            <div
-              className="w-24 h-24 rounded-xl border-4 border-white shadow-lg flex items-center justify-center text-white text-2xl font-display font-bold"
-              style={{ backgroundColor: store.color_primary }}
-            >
-              {store.name.charAt(0)}
-            </div>
-          )}
-          <div className="pb-2">
-            <h1 className="text-2xl font-display font-bold" style={{ color: store.color_text }}>
-              {store.name}
-            </h1>
-            {store.address && (
-              <p className="flex items-center gap-1 text-sm opacity-70 mt-1">
-                <MapPin className="h-3.5 w-3.5" />
-                {store.address}
-              </p>
-            )}
-          </div>
+            <img src={store.logo_url} alt={store.name} className="w-8 h-8 rounded-md object-cover" />
+          ) : null}
+          <span className="font-display text-lg font-bold italic text-primary">
+            {store.name}
+          </span>
         </div>
 
-        {store.banner_text && (
-          <div
-            className="mt-4 p-3 rounded-lg text-sm font-medium text-center"
-            style={{ backgroundColor: store.color_primary + "15", color: store.color_primary }}
-          >
-            {store.banner_text}
+        <nav className="hidden md:flex items-center gap-6">
+          <span className="text-sm text-primary font-medium border-b border-primary pb-0.5">Categorias</span>
+          <span className="text-sm text-muted-foreground hover:text-foreground cursor-pointer transition-colors">Sobre</span>
+        </nav>
+
+        <div className="flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-2 bg-secondary rounded-md px-3 py-1.5">
+            <Search className="h-4 w-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Buscar no cardápio..."
+              className="bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none w-40"
+            />
           </div>
-        )}
+          <Link
+            to={`/r/${store.slug}/cart`}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-border hover:bg-secondary transition-colors text-sm"
+          >
+            <ShoppingCart className="h-4 w-4 text-primary" />
+            <span className="text-primary font-medium">Carrinho ({cartCount})</span>
+          </Link>
+          <button className="p-2 rounded-md hover:bg-secondary transition-colors">
+            <User className="h-4 w-4 text-muted-foreground" />
+          </button>
+        </div>
       </div>
     </header>
   );
