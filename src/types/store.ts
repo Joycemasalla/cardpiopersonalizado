@@ -22,6 +22,104 @@ export interface Store {
   updated_at: string;
 }
 
+export interface MasterCategory {
+  id: string;
+  name: string;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface MasterProduct {
+  id: string;
+  category_id: string;
+  name: string;
+  description: string | null;
+  image_url: string | null;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface MasterProductSize {
+  id: string;
+  product_id: string;
+  name: string;
+  default_price: number;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface MasterAddon {
+  id: string;
+  name: string;
+  default_price: number;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface TenantProduct {
+  id: string;
+  store_id: string;
+  master_product_id: string;
+  is_enabled: boolean;
+  custom_image_url: string | null;
+  created_at: string;
+}
+
+export interface TenantProductSize {
+  id: string;
+  store_id: string;
+  master_size_id: string;
+  price: number;
+  is_enabled: boolean;
+  created_at: string;
+}
+
+export interface TenantAddon {
+  id: string;
+  store_id: string;
+  master_addon_id: string;
+  price: number;
+  is_enabled: boolean;
+  created_at: string;
+}
+
+// Combined view for public menu
+export interface MenuProduct {
+  id: string; // master_product_id
+  name: string;
+  description: string | null;
+  image_url: string | null;
+  category_id: string;
+  category_name: string;
+  sizes: MenuProductSize[];
+  custom_image_url: string | null;
+}
+
+export interface MenuProductSize {
+  id: string; // master_size_id
+  name: string;
+  price: number;
+}
+
+export interface MenuAddon {
+  id: string; // master_addon_id
+  name: string;
+  price: number;
+}
+
+export interface CartItem {
+  product: MenuProduct;
+  selectedSize: MenuProductSize;
+  addons: MenuAddon[];
+  quantity: number;
+  notes?: string;
+}
+
+// Legacy types kept for compatibility
 export interface Category {
   id: string;
   store_id: string;
@@ -83,14 +181,6 @@ export interface Promotion {
 
 export type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivered' | 'cancelled';
 export type OrderType = 'delivery' | 'pickup' | 'dine_in';
-
-export interface CartItem {
-  product: Product;
-  variation?: ProductVariation;
-  addons: CategoryAddon[];
-  quantity: number;
-  notes?: string;
-}
 
 export interface Order {
   id: string;

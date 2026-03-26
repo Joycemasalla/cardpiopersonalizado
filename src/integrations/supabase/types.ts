@@ -93,6 +93,136 @@ export type Database = {
           },
         ]
       }
+      master_addons: {
+        Row: {
+          created_at: string
+          default_price: number
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          default_price?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          default_price?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      master_categories: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      master_product_sizes: {
+        Row: {
+          created_at: string
+          default_price: number
+          id: string
+          is_active: boolean
+          name: string
+          product_id: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          default_price?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          product_id: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          default_price?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          product_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "master_product_sizes_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "master_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      master_products: {
+        Row: {
+          category_id: string
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "master_products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "master_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           address: string | null
@@ -407,6 +537,132 @@ export type Database = {
           whatsapp?: string | null
         }
         Relationships: []
+      }
+      tenant_addons: {
+        Row: {
+          created_at: string
+          id: string
+          is_enabled: boolean
+          master_addon_id: string
+          price: number
+          store_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          master_addon_id: string
+          price: number
+          store_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          master_addon_id?: string
+          price?: number
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_addons_master_addon_id_fkey"
+            columns: ["master_addon_id"]
+            isOneToOne: false
+            referencedRelation: "master_addons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_addons_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_product_sizes: {
+        Row: {
+          created_at: string
+          id: string
+          is_enabled: boolean
+          master_size_id: string
+          price: number
+          store_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          master_size_id: string
+          price: number
+          store_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          master_size_id?: string
+          price?: number
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_product_sizes_master_size_id_fkey"
+            columns: ["master_size_id"]
+            isOneToOne: false
+            referencedRelation: "master_product_sizes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_product_sizes_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_products: {
+        Row: {
+          created_at: string
+          custom_image_url: string | null
+          id: string
+          is_enabled: boolean
+          master_product_id: string
+          store_id: string
+        }
+        Insert: {
+          created_at?: string
+          custom_image_url?: string | null
+          id?: string
+          is_enabled?: boolean
+          master_product_id: string
+          store_id: string
+        }
+        Update: {
+          created_at?: string
+          custom_image_url?: string | null
+          id?: string
+          is_enabled?: boolean
+          master_product_id?: string
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_products_master_product_id_fkey"
+            columns: ["master_product_id"]
+            isOneToOne: false
+            referencedRelation: "master_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_products_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
