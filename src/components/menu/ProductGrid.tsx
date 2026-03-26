@@ -1,14 +1,13 @@
-import type { Product } from "@/types/store";
-import type { CartItem } from "@/types/store";
+import type { MenuProduct } from "@/types/store";
 import { Plus } from "lucide-react";
 
 interface ProductGridProps {
-  products: Product[];
+  products: MenuProduct[];
   categoryName?: string;
-  onAddToCart?: (product: Product) => void;
+  onSelectProduct?: (product: MenuProduct) => void;
 }
 
-export const ProductGrid = ({ products, categoryName, onAddToCart }: ProductGridProps) => {
+export const ProductGrid = ({ products, categoryName, onSelectProduct }: ProductGridProps) => {
   if (products.length === 0) {
     return (
       <div className="text-center py-16 text-muted-foreground">
@@ -16,6 +15,11 @@ export const ProductGrid = ({ products, categoryName, onAddToCart }: ProductGrid
       </div>
     );
   }
+
+  const lowestPrice = (product: MenuProduct) => {
+    if (product.sizes.length === 0) return 0;
+    return Math.min(...product.sizes.map((s) => Number(s.price)));
+  };
 
   return (
     <div>
@@ -32,7 +36,7 @@ export const ProductGrid = ({ products, categoryName, onAddToCart }: ProductGrid
           <div
             key={product.id}
             className="group rounded-lg bg-card border border-border overflow-hidden hover:border-primary/30 transition-all duration-300 cursor-pointer"
-            onClick={() => onAddToCart?.(product)}
+            onClick={() => onSelectProduct?.(product)}
           >
             {product.image_url ? (
               <div className="relative h-48 overflow-hidden">
@@ -41,29 +45,23 @@ export const ProductGrid = ({ products, categoryName, onAddToCart }: ProductGrid
                   alt={product.name}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
-                {product.is_featured && (
-                  <span className="absolute top-3 left-3 bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded">
-                    Destaque
-                  </span>
-                )}
               </div>
             ) : (
               <div className="h-48 bg-secondary flex items-center justify-center">
                 <span className="text-muted-foreground text-sm">Sem imagem</span>
-                {product.is_featured && (
-                  <span className="absolute top-3 left-3 bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded">
-                    Destaque
-                  </span>
-                )}
               </div>
             )}
             <div className="p-4">
               <div className="flex items-start justify-between gap-2">
-                <h3 className="font-display font-semibold text-foreground text-base">
-                  {product.name}
-                </h3>
+                <div>
+                  <h3 className="font-display font-semibold text-foreground text-base">
+                    {product.name}
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">{product.category_name}</p>
+                </div>
                 <span className="text-primary font-bold text-sm shrink-0">
-                  R$ {Number(product.price).toFixed(2).replace(".", ",")}
+                  {product.sizes.length > 1 ? "A partir de " : ""}
+                  R$ {lowestPrice(product).toFixed(2).replace(".", ",")}
                 </span>
               </div>
               {product.description && (
@@ -72,18 +70,18 @@ export const ProductGrid = ({ products, categoryName, onAddToCart }: ProductGrid
                 </p>
               )}
               <div className="flex items-center justify-between mt-4">
-                <div className="flex gap-1">
-                  {product.is_featured && (
-                    <span className="text-[10px] uppercase tracking-wider border border-border rounded px-2 py-0.5 text-muted-foreground">
-                      Popular
+                <div className="flex gap-1 flex-wrap">
+                  {product.sizes.map((s) => (
+                    <span key={s.id} className="text-[10px] uppercase tracking-wider border border-border rounded px-2 py-0.5 text-muted-foreground">
+                      {s.name}
                     </span>
-                  )}
+                  ))}
                 </div>
                 <button
                   className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/80 transition-colors"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onAddToCart?.(product);
+                    onSelectProduct?.(product);
                   }}
                 >
                   <Plus className="h-4 w-4" />
