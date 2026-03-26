@@ -252,14 +252,14 @@ const StoreMenu = () => {
       <StoreHeader store={store} cartCount={cartCount} />
 
       <CategoryNav
-        categories={activeCategories.map((c) => ({ ...c, store_id: store.id, updated_at: c.created_at }))}
+        categories={activeCategories.map((c) => ({ ...c, store_id: store.id, updated_at: c.created_at, image_url: null }))}
         activeCategory={activeCategory}
         onSelect={setActiveCategory}
       />
 
       <div className="flex min-h-[calc(100vh-3.5rem)]">
         <CategorySidebar
-          categories={activeCategories.map((c) => ({ ...c, store_id: store.id, updated_at: c.created_at }))}
+          categories={activeCategories.map((c) => ({ ...c, store_id: store.id, updated_at: c.created_at, image_url: null }))}
           activeCategory={activeCategory}
           onSelect={setActiveCategory}
         />
