@@ -314,6 +314,29 @@ const AdminDashboard = () => {
                           <span className="text-sm text-muted-foreground font-mono">{newStoreColor}</span>
                         </div>
                       </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs uppercase tracking-widest text-muted-foreground">Cor Secundária</Label>
+                        <div className="flex items-center gap-3">
+                          <input type="color" value={newStoreColorSecondary} onChange={(e) => setNewStoreColorSecondary(e.target.value)} className="w-10 h-10 rounded border-0 cursor-pointer" />
+                          <span className="text-sm text-muted-foreground font-mono">{newStoreColorSecondary}</span>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label className="text-xs uppercase tracking-widest text-muted-foreground">Cor de Fundo</Label>
+                          <div className="flex items-center gap-2">
+                            <input type="color" value={newStoreColorBg} onChange={(e) => setNewStoreColorBg(e.target.value)} className="w-8 h-8 rounded border-0 cursor-pointer" />
+                            <span className="text-[10px] text-muted-foreground font-mono">{newStoreColorBg}</span>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs uppercase tracking-widest text-muted-foreground">Cor do Texto</Label>
+                          <div className="flex items-center gap-2">
+                            <input type="color" value={newStoreColorText} onChange={(e) => setNewStoreColorText(e.target.value)} className="w-8 h-8 rounded border-0 cursor-pointer" />
+                            <span className="text-[10px] text-muted-foreground font-mono">{newStoreColorText}</span>
+                          </div>
+                        </div>
+                      </div>
                       <Button onClick={handleCreateStore} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-xs uppercase tracking-widest">
                         Criar Cardápio
                       </Button>
