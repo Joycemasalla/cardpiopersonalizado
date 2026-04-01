@@ -157,11 +157,15 @@ const AdminDashboard = () => {
       slug: newStoreSlug.toLowerCase().replace(/[^a-z0-9-]/g, ""),
       whatsapp: newStoreWhatsapp || null,
       color_primary: newStoreColor,
+      color_secondary: newStoreColorSecondary,
+      color_background: newStoreColorBg,
+      color_text: newStoreColorText,
     }).select().single();
     if (error) { toast.error(error.message); return; }
     toast.success("Loja criada!");
     setStoreDialogOpen(false);
     setNewStoreName(""); setNewStoreSlug(""); setNewStoreWhatsapp("");
+    setNewStoreColor("#D4A843"); setNewStoreColorSecondary("#1a1a2e"); setNewStoreColorBg("#0d0d0d"); setNewStoreColorText("#f5f5f5");
     queryClient.invalidateQueries({ queryKey: ["admin-stores"] });
   };
 
