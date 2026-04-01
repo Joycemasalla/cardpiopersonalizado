@@ -40,6 +40,49 @@ const StoreMenu = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<MenuProduct | null>(null);
 
+  // Apply store colors as CSS variables
+  useEffect(() => {
+    if (!store) return;
+    const root = document.documentElement;
+    root.style.setProperty("--store-primary", hexToHsl(store.color_primary));
+    root.style.setProperty("--store-secondary", hexToHsl(store.color_secondary));
+    root.style.setProperty("--store-background", hexToHsl(store.color_background));
+    root.style.setProperty("--store-text", hexToHsl(store.color_text));
+    // Override theme CSS variables
+    root.style.setProperty("--primary", hexToHsl(store.color_primary));
+    root.style.setProperty("--background", hexToHsl(store.color_background));
+    root.style.setProperty("--foreground", hexToHsl(store.color_text));
+    root.style.setProperty("--card", hexToHsl(store.color_background));
+    root.style.setProperty("--secondary", hexToHsl(store.color_secondary));
+    root.style.setProperty("--sidebar", hexToHsl(store.color_secondary));
+    root.style.setProperty("--sidebar-accent", hexToHsl(store.color_primary));
+    // Compute primary-foreground (light or dark based on primary luminance)
+    const primaryL = parseInt(hexToHsl(store.color_primary).split(" ")[2]);
+    root.style.setProperty("--primary-foreground", primaryL > 50 ? "0 0% 5%" : "0 0% 98%");
+    // Border color based on background
+    const bgL = parseInt(hexToHsl(store.color_background).split(" ")[2]);
+    root.style.setProperty("--border", bgL < 30 ? `${hexToHsl(store.color_text).split(" ")[0]} 10% 20%` : `${hexToHsl(store.color_text).split(" ")[0]} 10% 85%`);
+    root.style.setProperty("--muted-foreground", bgL < 30 ? `${hexToHsl(store.color_text).split(" ")[0]} 10% 55%` : `${hexToHsl(store.color_text).split(" ")[0]} 10% 45%`);
+
+    return () => {
+      // Reset on unmount
+      root.style.removeProperty("--store-primary");
+      root.style.removeProperty("--store-secondary");
+      root.style.removeProperty("--store-background");
+      root.style.removeProperty("--store-text");
+      root.style.removeProperty("--primary");
+      root.style.removeProperty("--background");
+      root.style.removeProperty("--foreground");
+      root.style.removeProperty("--card");
+      root.style.removeProperty("--secondary");
+      root.style.removeProperty("--sidebar");
+      root.style.removeProperty("--sidebar-accent");
+      root.style.removeProperty("--primary-foreground");
+      root.style.removeProperty("--border");
+      root.style.removeProperty("--muted-foreground");
+    };
+  }, [store]);
+
   const { data: store, isLoading: storeLoading } = useQuery({
     queryKey: ["store", slug],
     queryFn: async () => {
