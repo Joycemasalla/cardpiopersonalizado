@@ -414,7 +414,7 @@ const AdminDashboard = () => {
               {/* Store info */}
               {selectedStore && (
                 <div className="bg-card border border-border rounded-lg p-6">
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-4 mb-6">
                     <div className="w-14 h-14 rounded-lg flex items-center justify-center" style={{ backgroundColor: selectedStore.color_primary + "22" }}>
                       <StoreIcon className="h-6 w-6" style={{ color: selectedStore.color_primary }} />
                     </div>
@@ -425,10 +425,34 @@ const AdminDashboard = () => {
                       </p>
                     </div>
                   </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {[
+                      { label: "Cor Principal", field: "color_primary" as const, value: selectedStore.color_primary },
+                      { label: "Cor Secundária", field: "color_secondary" as const, value: selectedStore.color_secondary },
+                      { label: "Cor de Fundo", field: "color_background" as const, value: selectedStore.color_background },
+                      { label: "Cor do Texto", field: "color_text" as const, value: selectedStore.color_text },
+                    ].map(({ label, field, value }) => (
+                      <div key={field} className="space-y-1">
+                        <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</Label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            defaultValue={value}
+                            onBlur={async (e) => {
+                              if (e.target.value !== value) {
+                                await supabase.from("stores").update({ [field]: e.target.value }).eq("id", selectedStore.id);
+                                queryClient.invalidateQueries({ queryKey: ["admin-stores"] });
+                                toast.success(`${label} atualizada!`);
+                              }
+                            }}
+                            className="w-8 h-8 rounded border-0 cursor-pointer"
+                          />
+                          <span className="text-[10px] text-muted-foreground font-mono">{value}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              )}
-
-              {/* Products selection */}
               <div>
                 <h3 className="text-lg font-display font-semibold text-foreground italic mb-4">Produtos do Cardápio</h3>
                 <p className="text-xs text-muted-foreground mb-4">Ative os produtos do catálogo mestre que este cliente vende e defina os preços.</p>
