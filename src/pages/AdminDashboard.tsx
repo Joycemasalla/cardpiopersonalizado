@@ -453,6 +453,9 @@ const AdminDashboard = () => {
                     ))}
                   </div>
                 </div>
+              )}
+
+              {/* Products selection */}
               <div>
                 <h3 className="text-lg font-display font-semibold text-foreground italic mb-4">Produtos do Cardápio</h3>
                 <p className="text-xs text-muted-foreground mb-4">Ative os produtos do catálogo mestre que este cliente vende e defina os preços.</p>
