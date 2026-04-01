@@ -145,6 +145,9 @@ const AdminDashboard = () => {
   const [newStoreSlug, setNewStoreSlug] = useState("");
   const [newStoreWhatsapp, setNewStoreWhatsapp] = useState("");
   const [newStoreColor, setNewStoreColor] = useState("#D4A843");
+  const [newStoreColorSecondary, setNewStoreColorSecondary] = useState("#1a1a2e");
+  const [newStoreColorBg, setNewStoreColorBg] = useState("#0d0d0d");
+  const [newStoreColorText, setNewStoreColorText] = useState("#f5f5f5");
   const [storeDialogOpen, setStoreDialogOpen] = useState(false);
 
   const handleCreateStore = async () => {
@@ -154,11 +157,15 @@ const AdminDashboard = () => {
       slug: newStoreSlug.toLowerCase().replace(/[^a-z0-9-]/g, ""),
       whatsapp: newStoreWhatsapp || null,
       color_primary: newStoreColor,
+      color_secondary: newStoreColorSecondary,
+      color_background: newStoreColorBg,
+      color_text: newStoreColorText,
     }).select().single();
     if (error) { toast.error(error.message); return; }
     toast.success("Loja criada!");
     setStoreDialogOpen(false);
     setNewStoreName(""); setNewStoreSlug(""); setNewStoreWhatsapp("");
+    setNewStoreColor("#D4A843"); setNewStoreColorSecondary("#1a1a2e"); setNewStoreColorBg("#0d0d0d"); setNewStoreColorText("#f5f5f5");
     queryClient.invalidateQueries({ queryKey: ["admin-stores"] });
   };
 
@@ -307,6 +314,29 @@ const AdminDashboard = () => {
                           <span className="text-sm text-muted-foreground font-mono">{newStoreColor}</span>
                         </div>
                       </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs uppercase tracking-widest text-muted-foreground">Cor Secundária</Label>
+                        <div className="flex items-center gap-3">
+                          <input type="color" value={newStoreColorSecondary} onChange={(e) => setNewStoreColorSecondary(e.target.value)} className="w-10 h-10 rounded border-0 cursor-pointer" />
+                          <span className="text-sm text-muted-foreground font-mono">{newStoreColorSecondary}</span>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label className="text-xs uppercase tracking-widest text-muted-foreground">Cor de Fundo</Label>
+                          <div className="flex items-center gap-2">
+                            <input type="color" value={newStoreColorBg} onChange={(e) => setNewStoreColorBg(e.target.value)} className="w-8 h-8 rounded border-0 cursor-pointer" />
+                            <span className="text-[10px] text-muted-foreground font-mono">{newStoreColorBg}</span>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs uppercase tracking-widest text-muted-foreground">Cor do Texto</Label>
+                          <div className="flex items-center gap-2">
+                            <input type="color" value={newStoreColorText} onChange={(e) => setNewStoreColorText(e.target.value)} className="w-8 h-8 rounded border-0 cursor-pointer" />
+                            <span className="text-[10px] text-muted-foreground font-mono">{newStoreColorText}</span>
+                          </div>
+                        </div>
+                      </div>
                       <Button onClick={handleCreateStore} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-xs uppercase tracking-widest">
                         Criar Cardápio
                       </Button>
@@ -384,7 +414,7 @@ const AdminDashboard = () => {
               {/* Store info */}
               {selectedStore && (
                 <div className="bg-card border border-border rounded-lg p-6">
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-4 mb-6">
                     <div className="w-14 h-14 rounded-lg flex items-center justify-center" style={{ backgroundColor: selectedStore.color_primary + "22" }}>
                       <StoreIcon className="h-6 w-6" style={{ color: selectedStore.color_primary }} />
                     </div>
@@ -394,6 +424,33 @@ const AdminDashboard = () => {
                         {window.location.origin}/r/{selectedStore.slug}
                       </p>
                     </div>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {[
+                      { label: "Cor Principal", field: "color_primary" as const, value: selectedStore.color_primary },
+                      { label: "Cor Secundária", field: "color_secondary" as const, value: selectedStore.color_secondary },
+                      { label: "Cor de Fundo", field: "color_background" as const, value: selectedStore.color_background },
+                      { label: "Cor do Texto", field: "color_text" as const, value: selectedStore.color_text },
+                    ].map(({ label, field, value }) => (
+                      <div key={field} className="space-y-1">
+                        <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</Label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            defaultValue={value}
+                            onBlur={async (e) => {
+                              if (e.target.value !== value) {
+                                await supabase.from("stores").update({ [field]: e.target.value }).eq("id", selectedStore.id);
+                                queryClient.invalidateQueries({ queryKey: ["admin-stores"] });
+                                toast.success(`${label} atualizada!`);
+                              }
+                            }}
+                            className="w-8 h-8 rounded border-0 cursor-pointer"
+                          />
+                          <span className="text-[10px] text-muted-foreground font-mono">{value}</span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
