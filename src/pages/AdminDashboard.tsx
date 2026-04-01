@@ -145,6 +145,9 @@ const AdminDashboard = () => {
   const [newStoreSlug, setNewStoreSlug] = useState("");
   const [newStoreWhatsapp, setNewStoreWhatsapp] = useState("");
   const [newStoreColor, setNewStoreColor] = useState("#D4A843");
+  const [newStoreColorSecondary, setNewStoreColorSecondary] = useState("#1a1a2e");
+  const [newStoreColorBg, setNewStoreColorBg] = useState("#0d0d0d");
+  const [newStoreColorText, setNewStoreColorText] = useState("#f5f5f5");
   const [storeDialogOpen, setStoreDialogOpen] = useState(false);
 
   const handleCreateStore = async () => {
