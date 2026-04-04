@@ -1,50 +1,110 @@
-import type { Store } from "@/types/store";
-import { MapPin, ShoppingCart, User, Search } from "lucide-react";
+import { useState } from "react";
+import type { Store, Category } from "@/types/store";
+import { ShoppingCart, Menu, X, Settings } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface StoreHeaderProps {
   store: Store;
   cartCount?: number;
+  categories?: Category[];
+  activeCategory?: string | null;
+  onCategorySelect?: (id: string | null) => void;
 }
 
-export const StoreHeader = ({ store, cartCount = 0 }: StoreHeaderProps) => {
+export const StoreHeader = ({ store, cartCount = 0, categories = [], activeCategory, onCategorySelect }: StoreHeaderProps) => {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const handleCategoryClick = (categoryId?: string | null) => {
+    onCategorySelect?.(categoryId ?? null);
+    setMobileMenuOpen(false);
+  };
+
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur-md">
-      <div className="flex items-center justify-between h-14 px-4 lg:px-8">
-        <div className="flex items-center gap-3">
-          {store.logo_url ? (
-            <img src={store.logo_url} alt={store.name} className="w-8 h-8 rounded-md object-cover" />
-          ) : null}
-          <span className="font-display text-lg font-bold italic text-primary">
-            {store.name}
-          </span>
-        </div>
-
-        <nav className="hidden md:flex items-center gap-6">
-          <span className="text-sm text-primary font-medium border-b border-primary pb-0.5">Categorias</span>
-          <span className="text-sm text-muted-foreground hover:text-foreground cursor-pointer transition-colors">Sobre</span>
-        </nav>
-
-        <div className="flex items-center gap-3">
-          <div className="hidden md:flex items-center gap-2 bg-secondary rounded-md px-3 py-1.5">
-            <Search className="h-4 w-4 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Buscar no cardápio..."
-              className="bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none w-40"
-            />
-          </div>
-          <Link
-            to={`/r/${store.slug}/cart`}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-border hover:bg-secondary transition-colors text-sm"
-          >
-            <ShoppingCart className="h-4 w-4 text-primary" />
-            <span className="text-primary font-medium">Carrinho ({cartCount})</span>
+    <header className="bg-background border-b border-border sticky top-0 z-50">
+      <div className="container py-3">
+        <div className="flex items-center justify-between">
+          {/* Logo */}
+          <Link to={`/r/${store.slug}`} className="flex-shrink-0 flex items-center gap-3">
+            {store.logo_url ? (
+              <img src={store.logo_url} alt={store.name} className="h-12 md:h-14 w-auto rounded-md object-contain" />
+            ) : (
+              <span className="font-display text-xl font-bold italic text-primary">
+                {store.name}
+              </span>
+            )}
           </Link>
-          <button className="p-2 rounded-md hover:bg-secondary transition-colors">
-            <User className="h-4 w-4 text-muted-foreground" />
-          </button>
+
+          {/* Desktop Navigation */}
+          <nav className="hidden lg:flex items-center gap-1 flex-1 justify-center overflow-x-auto scrollbar-hide">
+            <button
+              onClick={() => handleCategoryClick(null)}
+              className={`px-3 py-2 text-xs font-medium uppercase tracking-wide whitespace-nowrap transition-colors hover:text-primary ${
+                !activeCategory ? "text-primary" : "text-foreground/80"
+              }`}
+            >
+              Todos
+            </button>
+            {categories.map((category) => (
+              <button
+                key={category.id}
+                onClick={() => handleCategoryClick(category.id)}
+                className={`px-3 py-2 text-xs font-medium uppercase tracking-wide whitespace-nowrap transition-colors hover:text-primary ${
+                  activeCategory === category.id ? "text-primary" : "text-foreground/80"
+                }`}
+              >
+                {category.name}
+              </button>
+            ))}
+          </nav>
+
+          {/* Right Icons */}
+          <div className="flex items-center gap-2">
+            <Link
+              to={`/r/${store.slug}/cart`}
+              className="relative p-2 hover:bg-muted rounded-lg transition-colors"
+            >
+              <ShoppingCart className="h-5 w-5 text-foreground" />
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                  {cartCount}
+                </span>
+              )}
+            </Link>
+            <button
+              className="p-2 hover:bg-muted rounded-lg transition-colors lg:hidden"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          </div>
         </div>
+
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <nav className="lg:hidden mt-4 pb-4 border-t border-border pt-4">
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => handleCategoryClick(null)}
+                className={`px-4 py-2 text-sm font-medium uppercase tracking-wide text-left transition-colors hover:text-primary ${
+                  !activeCategory ? "text-primary" : "text-foreground/80"
+                }`}
+              >
+                Todos
+              </button>
+              {categories.map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => handleCategoryClick(category.id)}
+                  className={`px-4 py-2 text-sm font-medium uppercase tracking-wide text-left transition-colors hover:text-primary ${
+                    activeCategory === category.id ? "text-primary" : "text-foreground/80"
+                  }`}
+                >
+                  {category.name}
+                </button>
+              ))}
+            </div>
+          </nav>
+        )}
       </div>
     </header>
   );

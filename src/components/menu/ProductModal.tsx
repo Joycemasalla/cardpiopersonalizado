@@ -1,9 +1,22 @@
+import { useState, useMemo } from "react";
 import type { MenuProduct, MenuProductSize, MenuAddon } from "@/types/store";
-import { X, Minus, Plus, ShoppingCart } from "lucide-react";
-import { useState } from "react";
+import { Plus, Minus, UtensilsCrossed, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 interface ProductModalProps {
   product: MenuProduct;
@@ -13,8 +26,8 @@ interface ProductModalProps {
 }
 
 export const ProductModal = ({ product, addons, onClose, onAddToCart }: ProductModalProps) => {
-  const [selectedSize, setSelectedSize] = useState<MenuProductSize | null>(
-    product.sizes.length > 0 ? product.sizes[0] : null
+  const [selectedSize, setSelectedSize] = useState<MenuProductSize | undefined>(
+    product.sizes.length > 0 ? product.sizes[0] : undefined
   );
   const [selectedAddons, setSelectedAddons] = useState<MenuAddon[]>([]);
   const [quantity, setQuantity] = useState(1);
@@ -27,145 +40,161 @@ export const ProductModal = ({ product, addons, onClose, onAddToCart }: ProductM
     );
   };
 
-  const sizePrice = selectedSize ? Number(selectedSize.price) : 0;
-  const addonsTotal = selectedAddons.reduce((sum, a) => sum + Number(a.price), 0);
-  const itemTotal = (sizePrice + addonsTotal) * quantity;
+  const currentPrice = useMemo(() => {
+    return selectedSize ? Number(selectedSize.price) : 0;
+  }, [selectedSize]);
+
+  const addonsTotal = useMemo(() => {
+    return selectedAddons.reduce((sum, a) => sum + Number(a.price), 0);
+  }, [selectedAddons]);
+
+  const finalPrice = currentPrice + addonsTotal;
+
+  const handleAddToCart = () => {
+    if (!selectedSize) return;
+    onAddToCart(product, selectedSize, selectedAddons, quantity);
+    toast.success(`${product.name} adicionado ao carrinho!`);
+  };
 
   return (
-    <AnimatePresence>
-      <motion.div
-        className="fixed inset-0 z-[60] flex items-center justify-center p-4"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-      >
-        {/* Backdrop */}
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+    <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-md max-h-[90vh] p-0 glass-effect border-primary/20 flex flex-col overflow-hidden">
+        {/* Scrollable area */}
+        <div className="flex-1 overflow-y-auto min-h-0">
+          {/* Image */}
+          <div className="relative aspect-video">
+            {product.image_url ? (
+              <img
+                src={product.image_url}
+                alt={product.name}
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+            ) : (
+              <div className="w-full h-full bg-muted flex items-center justify-center">
+                <UtensilsCrossed className="h-20 w-20 text-muted-foreground" />
+              </div>
+            )}
+          </div>
 
-        {/* Modal */}
-        <motion.div
-          className="relative bg-card border border-border rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl"
-          initial={{ scale: 0.95, y: 20 }}
-          animate={{ scale: 1, y: 0 }}
-          exit={{ scale: 0.95, y: 20 }}
-        >
-          {/* Header image */}
-          {product.image_url && (
-            <div className="relative h-56 overflow-hidden rounded-t-xl">
-              <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent" />
-            </div>
-          )}
+          <div className="p-4 space-y-4">
+            <DialogHeader className="p-0">
+              <DialogTitle className="text-xl font-display">{product.name}</DialogTitle>
+            </DialogHeader>
 
-          <button
-            onClick={onClose}
-            className="absolute top-3 right-3 w-8 h-8 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center text-foreground hover:bg-background transition-colors"
-          >
-            <X className="h-4 w-4" />
-          </button>
+            {product.description && (
+              <p className="text-muted-foreground text-sm">{product.description}</p>
+            )}
 
-          <div className="p-6 space-y-6">
-            {/* Product info */}
-            <div>
-              <p className="text-[10px] text-primary uppercase tracking-widest font-semibold">{product.category_name}</p>
-              <h2 className="text-2xl font-display font-bold italic text-foreground mt-1">{product.name}</h2>
-              {product.description && (
-                <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{product.description}</p>
-              )}
-            </div>
-
-            {/* Sizes */}
-            {product.sizes.length > 0 && (
-              <div>
-                <h3 className="text-xs uppercase tracking-widest text-muted-foreground font-semibold mb-3">
-                  Escolha o tamanho
-                </h3>
-                <div className="grid grid-cols-2 gap-2">
+            {/* Size variations */}
+            {product.sizes.length > 1 && (
+              <div className="space-y-3">
+                <Label className="text-base font-semibold">Escolha o tamanho</Label>
+                <RadioGroup
+                  value={selectedSize?.id}
+                  onValueChange={(id) => {
+                    const v = product.sizes.find((s) => s.id === id);
+                    setSelectedSize(v);
+                  }}
+                  className="space-y-2"
+                >
                   {product.sizes.map((size) => (
-                    <button
-                      key={size.id}
-                      onClick={() => setSelectedSize(size)}
-                      className={`flex items-center justify-between p-3 rounded-lg border transition-all ${
-                        selectedSize?.id === size.id
-                          ? "border-primary bg-primary/10 text-foreground"
-                          : "border-border bg-secondary/50 text-muted-foreground hover:border-primary/30"
-                      }`}
-                    >
-                      <span className="text-sm font-medium">{size.name}</span>
-                      <span className="text-sm font-bold text-primary">
-                        R$ {Number(size.price).toFixed(2).replace(".", ",")}
-                      </span>
-                    </button>
+                    <div key={size.id} className="flex items-center">
+                      <RadioGroupItem value={size.id} id={size.id} className="peer sr-only" />
+                      <Label
+                        htmlFor={size.id}
+                        className="flex-1 flex items-center justify-between p-3 rounded-lg border border-border bg-card cursor-pointer peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/10 transition-all"
+                      >
+                        <span className="font-medium">{size.name}</span>
+                        <span className="text-primary font-bold">R$ {Number(size.price).toFixed(2).replace(".", ",")}</span>
+                      </Label>
+                    </div>
                   ))}
-                </div>
+                </RadioGroup>
               </div>
             )}
 
             {/* Addons */}
             {addons.length > 0 && (
-              <div>
-                <h3 className="text-xs uppercase tracking-widest text-muted-foreground font-semibold mb-3">
-                  Adicionais
-                </h3>
-                <div className="space-y-2">
-                  {addons.map((addon) => {
-                    const isSelected = selectedAddons.some((a) => a.id === addon.id);
-                    return (
-                      <button
+              <Collapsible>
+                <div className="border-t border-border pt-4">
+                  <CollapsibleTrigger className="flex items-center justify-between w-full">
+                    <Label className="text-base font-semibold cursor-pointer">Adicionais</Label>
+                    <div className="flex items-center gap-2">
+                      {selectedAddons.length > 0 && (
+                        <span className="text-xs text-primary font-medium">
+                          {selectedAddons.length} selecionado(s)
+                        </span>
+                      )}
+                      <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+                    </div>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="mt-3 space-y-2">
+                    {addons.map((addon) => (
+                      <div
                         key={addon.id}
-                        onClick={() => toggleAddon(addon)}
-                        className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${
-                          isSelected
+                        className={`flex items-center justify-between p-3 rounded-lg border transition-all cursor-pointer ${
+                          selectedAddons.find((a) => a.id === addon.id)
                             ? "border-primary bg-primary/10"
-                            : "border-border bg-secondary/50 hover:border-primary/30"
+                            : "border-border bg-card hover:border-primary/50"
                         }`}
+                        onClick={() => toggleAddon(addon)}
                       >
                         <div className="flex items-center gap-3">
-                          <Checkbox checked={isSelected} className="pointer-events-none" />
-                          <span className="text-sm text-foreground">{addon.name}</span>
+                          <Checkbox
+                            checked={!!selectedAddons.find((a) => a.id === addon.id)}
+                            onCheckedChange={() => toggleAddon(addon)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          <span className="font-medium">{addon.name}</span>
                         </div>
-                        <span className="text-sm text-primary font-medium">
-                          + R$ {Number(addon.price).toFixed(2).replace(".", ",")}
+                        <span className="text-primary font-bold">
+                          +R$ {Number(addon.price).toFixed(2).replace(".", ",")}
                         </span>
-                      </button>
-                    );
-                  })}
+                      </div>
+                    ))}
+                  </CollapsibleContent>
                 </div>
-              </div>
+              </Collapsible>
             )}
-
-            {/* Quantity */}
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs uppercase tracking-widest text-muted-foreground font-semibold">Quantidade</h3>
-              <div className="flex items-center gap-3 bg-secondary rounded-lg">
-                <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="p-2 text-foreground hover:text-primary transition-colors"
-                >
-                  <Minus className="h-4 w-4" />
-                </button>
-                <span className="text-foreground font-bold w-8 text-center">{quantity}</span>
-                <button
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="p-2 text-foreground hover:text-primary transition-colors"
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-
-            {/* Add to cart */}
-            <Button
-              onClick={() => selectedSize && onAddToCart(product, selectedSize, selectedAddons, quantity)}
-              disabled={!selectedSize}
-              className="w-full bg-primary text-primary-foreground hover:bg-primary/90 py-6 text-base font-semibold"
-            >
-              <ShoppingCart className="mr-2 h-5 w-5" />
-              Adicionar — R$ {itemTotal.toFixed(2).replace(".", ",")}
-            </Button>
           </div>
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
+        </div>
+
+        {/* Fixed footer — quantity + button */}
+        <div className="sticky bottom-0 border-t border-border bg-background p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <Label className="text-base font-semibold">Quantidade</Label>
+            <div className="flex items-center gap-3">
+              <Button
+                size="icon"
+                variant="outline"
+                className="h-10 w-10"
+                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+              >
+                <Minus className="h-4 w-4" />
+              </Button>
+              <span className="w-8 text-center font-bold text-lg">{quantity}</span>
+              <Button
+                size="icon"
+                variant="outline"
+                className="h-10 w-10"
+                onClick={() => setQuantity(quantity + 1)}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          <Button
+            onClick={handleAddToCart}
+            size="lg"
+            className="w-full text-base"
+            disabled={!selectedSize}
+          >
+            Adicionar • R$ {(finalPrice * quantity).toFixed(2).replace(".", ",")}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };

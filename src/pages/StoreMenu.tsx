@@ -3,13 +3,15 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Store, MenuProduct, MenuProductSize, MenuAddon, CartItem } from "@/types/store";
 import { StoreHeader } from "@/components/menu/StoreHeader";
-import { CategorySidebar } from "@/components/menu/CategorySidebar";
+import { HeroBanner } from "@/components/menu/HeroBanner";
 import { CategoryNav } from "@/components/menu/CategoryNav";
 import { ProductGrid } from "@/components/menu/ProductGrid";
 import { CartBar } from "@/components/menu/CartBar";
 import { WhatsAppButton } from "@/components/menu/WhatsAppButton";
 import { ClosedOverlay } from "@/components/menu/ClosedOverlay";
 import { ProductModal } from "@/components/menu/ProductModal";
+import { ScrollToTopButton } from "@/components/menu/ScrollToTopButton";
+import { StoreFooter } from "@/components/menu/StoreFooter";
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { toast } from "sonner";
 
@@ -84,10 +86,11 @@ const StoreMenu = () => {
     const textHue = hexToHsl(store.color_text).split(" ")[0];
     root.style.setProperty("--border", bgL < 30 ? `${textHue} 10% 20%` : `${textHue} 10% 85%`);
     root.style.setProperty("--muted-foreground", bgL < 30 ? `${textHue} 10% 55%` : `${textHue} 10% 45%`);
+    root.style.setProperty("--muted", bgL < 30 ? `${textHue} 10% 18%` : `${textHue} 10% 96%`);
     root.style.setProperty("--sidebar-foreground", hexToHsl(store.color_text));
     root.style.setProperty("--sidebar-border", bgL < 30 ? `${textHue} 10% 20%` : `${textHue} 10% 85%`);
     return () => {
-      ["--primary","--background","--foreground","--card","--secondary","--sidebar","--sidebar-accent","--primary-foreground","--border","--muted-foreground","--sidebar-foreground","--sidebar-border"].forEach(p => root.style.removeProperty(p));
+      ["--primary","--background","--foreground","--card","--secondary","--sidebar","--sidebar-accent","--primary-foreground","--border","--muted-foreground","--muted","--sidebar-foreground","--sidebar-border"].forEach(p => root.style.removeProperty(p));
     };
   }, [store]);
 
@@ -144,7 +147,6 @@ const StoreMenu = () => {
     const categoryMap = new Map(categories.map(c => [c.id, c.name]));
     return products.map(p => {
       const productVariations = variations.filter(v => v.product_id === p.id);
-      // If product has variations, use them as sizes. Otherwise use product price as single size.
       const sizes: MenuProductSize[] = productVariations.length > 0
         ? productVariations.map(v => ({ id: v.id, name: v.name, price: Number(v.price) }))
         : [{ id: p.id, name: "Único", price: Number(p.price) }];
@@ -190,7 +192,6 @@ const StoreMenu = () => {
       }
       return [...prev, { product, selectedSize: size, addons, quantity }];
     });
-    toast.success(`${product.name} adicionado ao carrinho`);
     setSelectedProduct(null);
   }, []);
 
@@ -203,35 +204,72 @@ const StoreMenu = () => {
     ? menuProducts.filter(p => p.category_id === activeCategory)
     : menuProducts;
 
+  const categoryName = activeCategory
+    ? activeCategories.find(c => c.id === activeCategory)?.name
+    : "Cardápio Completo";
+
   if (storeLoading) {
-    return <div className="min-h-screen flex items-center justify-center bg-background"><div className="animate-pulse text-muted-foreground font-display italic">Carregando cardápio...</div></div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-pulse text-muted-foreground font-display italic">Carregando cardápio...</div>
+      </div>
+    );
   }
 
   if (!store) {
-    return <div className="min-h-screen flex items-center justify-center bg-background"><div className="text-center"><h1 className="text-2xl font-display font-bold italic text-foreground">Restaurante não encontrado</h1><p className="mt-2 text-muted-foreground">Verifique o link e tente novamente.</p></div></div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <h1 className="text-2xl font-display font-bold text-foreground">Restaurante não encontrado</h1>
+          <p className="mt-2 text-muted-foreground">Verifique o link e tente novamente.</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background flex flex-col">
       {(!store.is_open || store.maintenance_mode) && <ClosedOverlay message={store.closed_message} />}
-      <StoreHeader store={store} cartCount={cartCount} />
+
+      <StoreHeader
+        store={store}
+        cartCount={cartCount}
+        categories={activeCategories.map(c => ({ ...c, store_id: store.id, updated_at: c.created_at, image_url: c.image_url }))}
+        activeCategory={activeCategory}
+        onCategorySelect={setActiveCategory}
+      />
+
+      <HeroBanner store={store} />
+
       <CategoryNav
         categories={activeCategories.map(c => ({ ...c, store_id: store.id, updated_at: c.created_at, image_url: c.image_url }))}
         activeCategory={activeCategory}
         onSelect={setActiveCategory}
       />
-      <div className="flex min-h-[calc(100vh-3.5rem)]">
-        <CategorySidebar
-          categories={activeCategories.map(c => ({ ...c, store_id: store.id, updated_at: c.created_at, image_url: c.image_url }))}
-          activeCategory={activeCategory}
-          onSelect={setActiveCategory}
-        />
-        <main className="flex-1 p-4 lg:p-8 pb-32">
-          <ProductGrid products={filteredProducts} categoryName={activeCategory ? activeCategories.find(c => c.id === activeCategory)?.name : "Todos os Itens"} onSelectProduct={setSelectedProduct} />
-        </main>
-      </div>
+
+      <main className="container flex-1 pb-32 my-2">
+        <h2 className="text-2xl font-display font-semibold mb-6 text-center text-foreground">
+          {categoryName}
+        </h2>
+
+        {filteredProducts.length === 0 ? (
+          <p className="text-center py-12 text-muted-foreground">
+            Nenhum produto cadastrado nesta categoria
+          </p>
+        ) : (
+          <ProductGrid
+            products={filteredProducts}
+            onSelectProduct={setSelectedProduct}
+          />
+        )}
+      </main>
+
+      <StoreFooter store={store} />
+
       <CartBar itemCount={cartCount} total={cartTotal} slug={store.slug} />
+      <ScrollToTopButton />
       {store.whatsapp && <WhatsAppButton phone={store.whatsapp} />}
+
       {selectedProduct && (
         <ProductModal
           product={selectedProduct}
