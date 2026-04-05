@@ -43,8 +43,8 @@ const StoreMenu = () => {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<MenuProduct | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // Load cart from localStorage
   useEffect(() => {
     if (!slug) return;
     try {
@@ -53,7 +53,6 @@ const StoreMenu = () => {
     } catch {}
   }, [slug]);
 
-  // Save cart to localStorage
   useEffect(() => {
     if (!slug) return;
     localStorage.setItem(CART_KEY(slug), JSON.stringify(cart));
@@ -69,7 +68,6 @@ const StoreMenu = () => {
     enabled: !!slug,
   });
 
-  // Apply store colors
   useEffect(() => {
     if (!store) return;
     const root = document.documentElement;
@@ -94,7 +92,6 @@ const StoreMenu = () => {
     };
   }, [store]);
 
-  // Fetch per-store categories
   const { data: categories = [] } = useQuery({
     queryKey: ["menu-categories", store?.id],
     queryFn: async () => {
@@ -105,7 +102,6 @@ const StoreMenu = () => {
     enabled: !!store?.id,
   });
 
-  // Fetch per-store products
   const { data: products = [] } = useQuery({
     queryKey: ["menu-products", store?.id],
     queryFn: async () => {
@@ -116,7 +112,6 @@ const StoreMenu = () => {
     enabled: !!store?.id,
   });
 
-  // Fetch variations for all products
   const { data: variations = [] } = useQuery({
     queryKey: ["menu-variations", store?.id],
     queryFn: async () => {
@@ -129,7 +124,6 @@ const StoreMenu = () => {
     enabled: products.length > 0,
   });
 
-  // Fetch category addons
   const { data: categoryAddons = [] } = useQuery({
     queryKey: ["menu-addons", store?.id],
     queryFn: async () => {
@@ -142,7 +136,6 @@ const StoreMenu = () => {
     enabled: categories.length > 0,
   });
 
-  // Build menu products
   const menuProducts: MenuProduct[] = useMemo(() => {
     const categoryMap = new Map(categories.map(c => [c.id, c.name]));
     return products.map(p => {
@@ -159,25 +152,22 @@ const StoreMenu = () => {
         category_id: p.category_id,
         category_name: categoryMap.get(p.category_id) || "",
         sizes,
-        custom_image_url: null,
       };
     });
   }, [products, categories, variations]);
 
-  // Addons for the selected product's category
   const getAddonsForProduct = useCallback((product: MenuProduct): MenuAddon[] => {
     return categoryAddons
       .filter(a => a.category_id === product.category_id)
       .map(a => ({ id: a.id, name: a.name, price: Number(a.price) }));
   }, [categoryAddons]);
 
-  // Active categories (that have products)
   const activeCategories = useMemo(() => {
     const catIds = new Set(menuProducts.map(p => p.category_id));
     return categories.filter(c => catIds.has(c.id));
   }, [categories, menuProducts]);
 
-  const handleAddToCart = useCallback((product: MenuProduct, size: MenuProductSize, addons: MenuAddon[], quantity: number) => {
+  const handleAddToCart = useCallback((product: MenuProduct, size: MenuProductSize, addons: MenuAddon[], quantity: number, notes?: string) => {
     setCart(prev => {
       const existing = prev.find(
         item => item.product.id === product.id && item.selectedSize.id === size.id &&
@@ -190,7 +180,7 @@ const StoreMenu = () => {
             : item
         );
       }
-      return [...prev, { product, selectedSize: size, addons, quantity }];
+      return [...prev, { product, selectedSize: size, addons, quantity, notes }];
     });
     setSelectedProduct(null);
   }, []);
@@ -200,13 +190,26 @@ const StoreMenu = () => {
   );
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-  const filteredProducts = activeCategory
-    ? menuProducts.filter(p => p.category_id === activeCategory)
-    : menuProducts;
+  // Filter by category AND search query
+  const filteredProducts = useMemo(() => {
+    let filtered = menuProducts;
+    if (activeCategory) {
+      filtered = filtered.filter(p => p.category_id === activeCategory);
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(p =>
+        p.name.toLowerCase().includes(q) ||
+        (p.description && p.description.toLowerCase().includes(q)) ||
+        p.category_name.toLowerCase().includes(q)
+      );
+    }
+    return filtered;
+  }, [menuProducts, activeCategory, searchQuery]);
 
   const categoryName = activeCategory
     ? activeCategories.find(c => c.id === activeCategory)?.name
-    : "Cardápio Completo";
+    : searchQuery ? `Resultados para "${searchQuery}"` : "Cardápio Completo";
 
   if (storeLoading) {
     return (
@@ -237,6 +240,8 @@ const StoreMenu = () => {
         categories={activeCategories.map(c => ({ ...c, store_id: store.id, updated_at: c.created_at, image_url: c.image_url }))}
         activeCategory={activeCategory}
         onCategorySelect={setActiveCategory}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
       />
 
       <HeroBanner store={store} />
@@ -254,7 +259,7 @@ const StoreMenu = () => {
 
         {filteredProducts.length === 0 ? (
           <p className="text-center py-12 text-muted-foreground">
-            Nenhum produto cadastrado nesta categoria
+            {searchQuery ? "Nenhum produto encontrado para esta busca" : "Nenhum produto cadastrado nesta categoria"}
           </p>
         ) : (
           <ProductGrid

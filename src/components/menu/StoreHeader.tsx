@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Store, Category } from "@/types/store";
-import { ShoppingCart, Menu, X, Settings } from "lucide-react";
+import { ShoppingCart, Menu, X, Search } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface StoreHeaderProps {
@@ -9,10 +9,13 @@ interface StoreHeaderProps {
   categories?: Category[];
   activeCategory?: string | null;
   onCategorySelect?: (id: string | null) => void;
+  searchQuery?: string;
+  onSearchChange?: (query: string) => void;
 }
 
-export const StoreHeader = ({ store, cartCount = 0, categories = [], activeCategory, onCategorySelect }: StoreHeaderProps) => {
+export const StoreHeader = ({ store, cartCount = 0, categories = [], activeCategory, onCategorySelect, searchQuery = "", onSearchChange }: StoreHeaderProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const handleCategoryClick = (categoryId?: string | null) => {
     onCategorySelect?.(categoryId ?? null);
@@ -23,7 +26,6 @@ export const StoreHeader = ({ store, cartCount = 0, categories = [], activeCateg
     <header className="bg-background border-b border-border sticky top-0 z-50">
       <div className="container py-3">
         <div className="flex items-center justify-between">
-          {/* Logo */}
           <Link to={`/r/${store.slug}`} className="flex-shrink-0 flex items-center gap-3">
             {store.logo_url ? (
               <img src={store.logo_url} alt={store.name} className="h-12 md:h-14 w-auto rounded-md object-contain" />
@@ -59,6 +61,12 @@ export const StoreHeader = ({ store, cartCount = 0, categories = [], activeCateg
 
           {/* Right Icons */}
           <div className="flex items-center gap-2">
+            <button
+              className="p-2 hover:bg-muted rounded-lg transition-colors"
+              onClick={() => setSearchOpen(!searchOpen)}
+            >
+              <Search className="h-5 w-5 text-foreground" />
+            </button>
             <Link
               to={`/r/${store.slug}/cart`}
               className="relative p-2 hover:bg-muted rounded-lg transition-colors"
@@ -78,6 +86,20 @@ export const StoreHeader = ({ store, cartCount = 0, categories = [], activeCateg
             </button>
           </div>
         </div>
+
+        {/* Search Bar */}
+        {searchOpen && (
+          <div className="mt-3 pb-1">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => onSearchChange?.(e.target.value)}
+              placeholder="Buscar no cardápio..."
+              className="w-full bg-secondary border border-border rounded-lg px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              autoFocus
+            />
+          </div>
+        )}
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (

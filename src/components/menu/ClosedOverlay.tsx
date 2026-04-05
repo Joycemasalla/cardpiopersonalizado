@@ -1,7 +1,7 @@
 import { Clock } from "lucide-react";
 
 interface ClosedOverlayProps {
-  message: string;
+  message: string | null;
 }
 
 export const ClosedOverlay = ({ message }: ClosedOverlayProps) => {
@@ -12,7 +12,7 @@ export const ClosedOverlay = ({ message }: ClosedOverlayProps) => {
         <h2 className="text-xl font-display font-bold italic text-foreground mb-2">
           Estamos fechados
         </h2>
-        <p className="text-muted-foreground text-sm">{message}</p>
+        <p className="text-muted-foreground text-sm">{message || "Estamos fechados no momento."}</p>
       </div>
     </div>
   );

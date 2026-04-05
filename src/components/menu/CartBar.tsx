@@ -14,7 +14,7 @@ export const CartBar = ({ itemCount, total, slug }: CartBarProps) => {
   return (
     <Link to={`/r/${slug}/cart`}>
       <Button
-        className="fixed bottom-24 right-6 z-40 flex items-center gap-3 bg-card text-foreground px-5 py-3 rounded-full shadow-2xl border border-border hover:border-primary transition-all"
+        className="fixed bottom-24 right-6 z-40 flex items-center gap-3 bg-primary text-primary-foreground px-5 py-3 rounded-full shadow-2xl hover:bg-primary/90 transition-all"
       >
         <ShoppingCart className="h-5 w-5" />
         <span className="font-semibold">{itemCount}</span>

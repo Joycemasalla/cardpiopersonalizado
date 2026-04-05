@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -22,7 +23,7 @@ interface ProductModalProps {
   product: MenuProduct;
   addons: MenuAddon[];
   onClose: () => void;
-  onAddToCart: (product: MenuProduct, size: MenuProductSize, addons: MenuAddon[], quantity: number) => void;
+  onAddToCart: (product: MenuProduct, size: MenuProductSize, addons: MenuAddon[], quantity: number, notes?: string) => void;
 }
 
 export const ProductModal = ({ product, addons, onClose, onAddToCart }: ProductModalProps) => {
@@ -31,6 +32,7 @@ export const ProductModal = ({ product, addons, onClose, onAddToCart }: ProductM
   );
   const [selectedAddons, setSelectedAddons] = useState<MenuAddon[]>([]);
   const [quantity, setQuantity] = useState(1);
+  const [notes, setNotes] = useState("");
 
   const toggleAddon = (addon: MenuAddon) => {
     setSelectedAddons((prev) =>
@@ -52,16 +54,14 @@ export const ProductModal = ({ product, addons, onClose, onAddToCart }: ProductM
 
   const handleAddToCart = () => {
     if (!selectedSize) return;
-    onAddToCart(product, selectedSize, selectedAddons, quantity);
+    onAddToCart(product, selectedSize, selectedAddons, quantity, notes.trim() || undefined);
     toast.success(`${product.name} adicionado ao carrinho!`);
   };
 
   return (
     <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-md max-h-[90vh] p-0 glass-effect border-primary/20 flex flex-col overflow-hidden">
-        {/* Scrollable area */}
         <div className="flex-1 overflow-y-auto min-h-0">
-          {/* Image */}
           <div className="relative aspect-video">
             {product.image_url ? (
               <img
@@ -157,10 +157,22 @@ export const ProductModal = ({ product, addons, onClose, onAddToCart }: ProductM
                 </div>
               </Collapsible>
             )}
+
+            {/* Notes / Observação */}
+            <div className="border-t border-border pt-4 space-y-2">
+              <Label className="text-sm font-semibold">Observação</Label>
+              <Textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Ex: Sem cebola, bem passado..."
+                className="bg-card border-border text-foreground text-sm"
+                rows={2}
+              />
+            </div>
           </div>
         </div>
 
-        {/* Fixed footer — quantity + button */}
+        {/* Fixed footer */}
         <div className="sticky bottom-0 border-t border-border bg-background p-4 space-y-3">
           <div className="flex items-center justify-between">
             <Label className="text-base font-semibold">Quantidade</Label>

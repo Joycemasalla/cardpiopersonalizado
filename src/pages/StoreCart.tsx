@@ -17,6 +17,7 @@ const StoreCart = () => {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [tableNumber, setTableNumber] = useState("");
   const [orderType, setOrderType] = useState<"delivery" | "pickup" | "dine_in">("delivery");
 
   const { data: store } = useQuery({
@@ -29,7 +30,6 @@ const StoreCart = () => {
     enabled: !!slug,
   });
 
-  // Load cart from localStorage
   useEffect(() => {
     if (!slug) return;
     try {
@@ -38,7 +38,6 @@ const StoreCart = () => {
     } catch {}
   }, [slug]);
 
-  // Save back
   useEffect(() => {
     if (!slug) return;
     localStorage.setItem(CART_KEY(slug), JSON.stringify(cart));
@@ -57,6 +56,7 @@ const StoreCart = () => {
   const handleWhatsAppOrder = () => {
     if (!name.trim()) { toast.error("Informe seu nome"); return; }
     if (orderType === "delivery" && !address.trim()) { toast.error("Informe o endereço de entrega"); return; }
+    if (orderType === "dine_in" && !tableNumber.trim()) { toast.error("Informe o número da mesa"); return; }
     if (!store?.whatsapp) { toast.error("WhatsApp não configurado"); return; }
 
     const orderTypeLabel = { delivery: "🚚 Entrega", pickup: "🏪 Retirada", dine_in: "🍽️ Na Mesa" }[orderType];
@@ -68,11 +68,10 @@ const StoreCart = () => {
       return line;
     }).join("\n");
 
-    const message = `🛒 *Novo Pedido — ${store.name}*\n\n👤 *Nome:* ${name}\n📱 *Tel:* ${phone || "Não informado"}\n${orderTypeLabel}${orderType === "delivery" ? `\n📍 *Endereço:* ${address}` : ""}\n\n─────────────────\n${itemsText}\n─────────────────\n\n💰 Subtotal: R$ ${subtotal.toFixed(2).replace(".", ",")}\n🚚 Entrega: R$ ${deliveryFee.toFixed(2).replace(".", ",")}\n✅ *TOTAL: R$ ${total.toFixed(2).replace(".", ",")}*`;
+    const message = `🛒 *Novo Pedido — ${store.name}*\n\n👤 *Nome:* ${name}\n📱 *Tel:* ${phone || "Não informado"}\n${orderTypeLabel}${orderType === "delivery" ? `\n📍 *Endereço:* ${address}` : ""}${orderType === "dine_in" ? `\n🪑 *Mesa:* ${tableNumber}` : ""}\n\n─────────────────\n${itemsText}\n─────────────────\n\n💰 Subtotal: R$ ${subtotal.toFixed(2).replace(".", ",")}\n🚚 Entrega: R$ ${deliveryFee.toFixed(2).replace(".", ",")}\n✅ *TOTAL: R$ ${total.toFixed(2).replace(".", ",")}*`;
     
     window.open(`https://wa.me/${store.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(message)}`, "_blank");
     
-    // Clear cart after sending
     setCart([]);
     localStorage.removeItem(CART_KEY(slug!));
     toast.success("Pedido enviado pelo WhatsApp!");
@@ -114,6 +113,7 @@ const StoreCart = () => {
                     <div className="flex-1 min-w-0">
                       <h3 className="font-display font-semibold text-foreground">{item.product.name}</h3>
                       <p className="text-xs text-muted-foreground">{item.selectedSize.name}{item.addons.length > 0 ? ` · ${item.addons.map(a => a.name).join(", ")}` : ""}</p>
+                      {item.notes && <p className="text-[10px] text-muted-foreground mt-0.5">📝 {item.notes}</p>}
                     </div>
                     <span className="text-primary font-bold text-sm">
                       R$ {((Number(item.selectedSize.price) + item.addons.reduce((a, addon) => a + Number(addon.price), 0)) * item.quantity).toFixed(2).replace(".", ",")}
@@ -163,6 +163,12 @@ const StoreCart = () => {
                 <div className="mt-4 space-y-2">
                   <Label className="text-xs uppercase tracking-widest text-muted-foreground">Endereço de Entrega *</Label>
                   <Input placeholder="Rua, número, bairro..." value={address} onChange={(e) => setAddress(e.target.value)} className="bg-secondary border-border text-foreground" />
+                </div>
+              )}
+              {orderType === "dine_in" && (
+                <div className="mt-4 space-y-2">
+                  <Label className="text-xs uppercase tracking-widest text-muted-foreground">Número da Mesa *</Label>
+                  <Input placeholder="Ex: 5" value={tableNumber} onChange={(e) => setTableNumber(e.target.value)} className="bg-secondary border-border text-foreground" />
                 </div>
               )}
             </div>
