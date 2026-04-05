@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Store } from "@/types/store";
+import type { Store, Order, OrderStatus } from "@/types/store";
 import {
-  LogOut, Plus, Store as StoreIcon, Trash2, Eye, Copy, Settings, Layers, Package, Cherry,
-  ToggleLeft, ToggleRight, ChevronRight, Upload, Image as ImageIcon
+  LogOut, Plus, Store as StoreIcon, Trash2, Eye, Copy, Settings, Layers, Package,
+  Cherry, ToggleLeft, ToggleRight, ChevronRight, Upload, Image as ImageIcon,
+  ClipboardList, Pencil, X, Check
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,7 +28,27 @@ interface StoreCategoryAddon {
   id: string; category_id: string; name: string; price: number; sort_order: number; is_active: boolean;
 }
 
-type StoreTab = "config" | "categories" | "products";
+type StoreTab = "config" | "categories" | "products" | "orders";
+
+const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
+  pending: "Pendente",
+  confirmed: "Confirmado",
+  preparing: "Preparando",
+  ready: "Pronto",
+  delivered: "Entregue",
+  cancelled: "Cancelado",
+};
+
+const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
+  pending: "bg-yellow-500/20 text-yellow-400",
+  confirmed: "bg-blue-500/20 text-blue-400",
+  preparing: "bg-orange-500/20 text-orange-400",
+  ready: "bg-green-500/20 text-green-400",
+  delivered: "bg-emerald-500/20 text-emerald-400",
+  cancelled: "bg-red-500/20 text-red-400",
+};
+
+const STATUS_FLOW: OrderStatus[] = ["pending", "confirmed", "preparing", "ready", "delivered"];
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -62,7 +83,6 @@ const AdminDashboard = () => {
     enabled: isPlatformAdmin,
   });
 
-  // Per-store data
   const { data: storeCategories = [] } = useQuery({
     queryKey: ["store-categories", selectedStoreId],
     queryFn: async () => {
@@ -106,6 +126,45 @@ const AdminDashboard = () => {
     },
     enabled: storeCategories.length > 0,
   });
+
+  // ─── Orders ───
+  const { data: storeOrders = [] } = useQuery({
+    queryKey: ["store-orders", selectedStoreId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*")
+        .eq("store_id", selectedStoreId!)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as unknown as Order[];
+    },
+    enabled: !!selectedStoreId && storeTab === "orders",
+    refetchInterval: 15000,
+  });
+
+  // Realtime orders subscription
+  useEffect(() => {
+    if (!selectedStoreId || storeTab !== "orders") return;
+    const channel = supabase
+      .channel(`orders-${selectedStoreId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "orders", filter: `store_id=eq.${selectedStoreId}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["store-orders", selectedStoreId] });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [selectedStoreId, storeTab, queryClient]);
+
+  const handleUpdateOrderStatus = async (orderId: string, status: OrderStatus) => {
+    const { error } = await supabase.from("orders").update({ status }).eq("id", orderId);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`Pedido atualizado para ${ORDER_STATUS_LABELS[status]}`);
+    queryClient.invalidateQueries({ queryKey: ["store-orders", selectedStoreId] });
+  };
 
   const handleSignOut = async () => { await supabase.auth.signOut(); navigate("/login"); };
 
@@ -165,18 +224,51 @@ const AdminDashboard = () => {
   const [newProductDesc, setNewProductDesc] = useState("");
   const [newProductPrice, setNewProductPrice] = useState("");
   const [newProductCatId, setNewProductCatId] = useState("");
-  const [newProductImageUrl, setNewProductImageUrl] = useState("");
+  const [newProductImageFile, setNewProductImageFile] = useState<File | null>(null);
+
+  // ─── Product Edit ───
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editDesc, setEditDesc] = useState("");
+  const [editPrice, setEditPrice] = useState("");
+  const [editCatId, setEditCatId] = useState("");
+
+  const startEditProduct = (p: StoreProduct) => {
+    setEditingProductId(p.id);
+    setEditName(p.name);
+    setEditDesc(p.description || "");
+    setEditPrice(String(p.price));
+    setEditCatId(p.category_id);
+  };
+
+  const handleSaveProduct = async () => {
+    if (!editingProductId) return;
+    const { error } = await supabase.from("products").update({
+      name: editName,
+      description: editDesc || null,
+      price: parseFloat(editPrice) || 0,
+      category_id: editCatId,
+    }).eq("id", editingProductId);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Produto atualizado!");
+    setEditingProductId(null);
+    queryClient.invalidateQueries({ queryKey: ["store-products", selectedStoreId] });
+  };
 
   const handleCreateProduct = async () => {
     if (!newProductName || !newProductCatId || !selectedStoreId) { toast.error("Preencha nome e categoria"); return; }
+    let imageUrl: string | null = null;
+    if (newProductImageFile) {
+      imageUrl = await handleImageUpload(newProductImageFile, `products/${selectedStoreId}`);
+    }
     const { error } = await supabase.from("products").insert({
       store_id: selectedStoreId, category_id: newProductCatId, name: newProductName,
       description: newProductDesc || null, price: parseFloat(newProductPrice) || 0,
-      image_url: newProductImageUrl || null, sort_order: storeProducts.length,
+      image_url: imageUrl, sort_order: storeProducts.length,
     });
     if (error) { toast.error(error.message); return; }
     toast.success("Produto criado!");
-    setNewProductName(""); setNewProductDesc(""); setNewProductPrice(""); setNewProductCatId(""); setNewProductImageUrl("");
+    setNewProductName(""); setNewProductDesc(""); setNewProductPrice(""); setNewProductCatId(""); setNewProductImageFile(null);
     setProductDialogOpen(false);
     queryClient.invalidateQueries({ queryKey: ["store-products", selectedStoreId] });
   };
@@ -280,6 +372,7 @@ const AdminDashboard = () => {
                 { id: "config" as StoreTab, icon: Settings, label: "Configurações" },
                 { id: "categories" as StoreTab, icon: Layers, label: "Categorias" },
                 { id: "products" as StoreTab, icon: Package, label: "Produtos" },
+                { id: "orders" as StoreTab, icon: ClipboardList, label: "Pedidos" },
               ]).map(({ id, icon: Icon, label }) => (
                 <button
                   key={id}
@@ -410,10 +503,10 @@ const AdminDashboard = () => {
               <Button variant="ghost" size="sm" onClick={() => setSelectedStoreId(null)} className="text-muted-foreground hover:text-foreground text-xs mb-2">← Voltar às lojas</Button>
 
               {/* Mobile tab selector */}
-              <div className="flex gap-2 lg:hidden">
-                {(["config", "categories", "products"] as StoreTab[]).map((t) => (
+              <div className="flex gap-2 lg:hidden flex-wrap">
+                {(["config", "categories", "products", "orders"] as StoreTab[]).map((t) => (
                   <button key={t} onClick={() => setStoreTab(t)} className={`px-3 py-1.5 rounded-md text-xs uppercase tracking-widest font-semibold transition-all ${storeTab === t ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>
-                    {t === "config" ? "Config" : t === "categories" ? "Categorias" : "Produtos"}
+                    {t === "config" ? "Config" : t === "categories" ? "Categorias" : t === "products" ? "Produtos" : "Pedidos"}
                   </button>
                 ))}
               </div>
@@ -445,6 +538,33 @@ const AdminDashboard = () => {
                     <div>
                       <h2 className="text-xl font-display font-bold italic text-foreground">{selectedStore.name}</h2>
                       <p className="text-xs text-muted-foreground">/r/{selectedStore.slug}</p>
+                    </div>
+                  </div>
+
+                  {/* Banner upload */}
+                  <div className="space-y-2">
+                    <h3 className="text-xs uppercase tracking-widest text-muted-foreground font-semibold">Banner da Loja</h3>
+                    <div className="relative group rounded-lg overflow-hidden border border-border h-32">
+                      {selectedStore.banner_url ? (
+                        <img src={selectedStore.banner_url} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-secondary flex items-center justify-center">
+                          <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                        </div>
+                      )}
+                      <label className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                        <Upload className="h-6 w-6 text-white" />
+                        <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const url = await handleImageUpload(file, `banners/${selectedStoreId}`);
+                          if (url) {
+                            await supabase.from("stores").update({ banner_url: url }).eq("id", selectedStoreId!);
+                            queryClient.invalidateQueries({ queryKey: ["admin-stores"] });
+                            toast.success("Banner atualizado!");
+                          }
+                        }} />
+                      </label>
                     </div>
                   </div>
 
@@ -493,13 +613,31 @@ const AdminDashboard = () => {
                     </div>
                   </div>
 
-                  {/* Banner */}
+                  {/* Banner text */}
                   <div className="space-y-2">
                     <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">Texto do Banner</Label>
                     <Input defaultValue={selectedStore.banner_text || ""} onBlur={async (e) => {
                       await supabase.from("stores").update({ banner_text: e.target.value || null }).eq("id", selectedStore.id);
                       queryClient.invalidateQueries({ queryKey: ["admin-stores"] });
                     }} placeholder="Ex: 🔥 Promoção de inauguração!" className="bg-secondary border-border text-foreground" />
+                  </div>
+
+                  {/* Address */}
+                  <div className="space-y-2">
+                    <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">Endereço</Label>
+                    <Input defaultValue={selectedStore.address || ""} onBlur={async (e) => {
+                      await supabase.from("stores").update({ address: e.target.value || null }).eq("id", selectedStore.id);
+                      queryClient.invalidateQueries({ queryKey: ["admin-stores"] });
+                    }} placeholder="Ex: Rua das Flores, 123 - Centro" className="bg-secondary border-border text-foreground" />
+                  </div>
+
+                  {/* Closed message */}
+                  <div className="space-y-2">
+                    <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">Mensagem de Loja Fechada</Label>
+                    <Input defaultValue={selectedStore.closed_message || ""} onBlur={async (e) => {
+                      await supabase.from("stores").update({ closed_message: e.target.value || null }).eq("id", selectedStore.id);
+                      queryClient.invalidateQueries({ queryKey: ["admin-stores"] });
+                    }} placeholder="Estamos fechados no momento." className="bg-secondary border-border text-foreground" />
                   </div>
 
                   {/* Toggle open/closed */}
@@ -610,8 +748,17 @@ const AdminDashboard = () => {
                             <Input type="number" step="0.01" value={newProductPrice} onChange={(e) => setNewProductPrice(e.target.value)} placeholder="0.00" className="bg-secondary border-border text-foreground" />
                           </div>
                           <div className="space-y-2">
-                            <Label className="text-xs uppercase tracking-widest text-muted-foreground">URL da Imagem (opcional)</Label>
-                            <Input value={newProductImageUrl} onChange={(e) => setNewProductImageUrl(e.target.value)} placeholder="https://..." className="bg-secondary border-border text-foreground" />
+                            <Label className="text-xs uppercase tracking-widest text-muted-foreground">Imagem do Produto</Label>
+                            <div className="flex items-center gap-3">
+                              {newProductImageFile && (
+                                <img src={URL.createObjectURL(newProductImageFile)} alt="" className="w-12 h-12 rounded-md object-cover" />
+                              )}
+                              <label className="flex items-center gap-2 px-3 py-2 bg-secondary border border-border rounded-md cursor-pointer hover:bg-muted transition-colors">
+                                <Upload className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-xs text-muted-foreground">{newProductImageFile ? "Trocar" : "Upload"}</span>
+                                <input type="file" accept="image/*" className="hidden" onChange={(e) => setNewProductImageFile(e.target.files?.[0] || null)} />
+                              </label>
+                            </div>
                           </div>
                           <Button onClick={handleCreateProduct} className="w-full bg-primary text-primary-foreground text-xs uppercase tracking-widest">Criar Produto</Button>
                         </div>
@@ -632,25 +779,19 @@ const AdminDashboard = () => {
                           <h4 className="text-xs uppercase tracking-widest text-primary font-semibold">{cat.name}</h4>
                           {catProducts.map(product => {
                             const variations = storeVariations.filter(v => v.product_id === product.id);
+                            const isEditing = editingProductId === product.id;
                             return (
                               <div key={product.id} className={`bg-card border rounded-lg p-4 transition-all ${product.is_active ? "border-border" : "border-border opacity-50"}`}>
-                                <div className="flex items-center gap-3">
-                                  {product.image_url ? (
-                                    <img src={product.image_url} alt="" className="w-12 h-12 rounded-md object-cover" />
-                                  ) : (
-                                    <div className="w-12 h-12 rounded-md bg-secondary flex items-center justify-center"><ImageIcon className="h-4 w-4 text-muted-foreground" /></div>
-                                  )}
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2">
-                                      <p className="text-sm font-medium text-foreground">{product.name}</p>
-                                      <span className="text-xs text-primary font-mono">R$ {Number(product.price).toFixed(2).replace(".", ",")}</span>
-                                    </div>
-                                    {product.description && <p className="text-[10px] text-muted-foreground truncate">{product.description}</p>}
-                                  </div>
-                                  <div className="flex items-center gap-1.5">
-                                    {/* Upload image */}
-                                    <label className="cursor-pointer p-1.5 rounded-md hover:bg-secondary transition-colors">
-                                      <Upload className="h-3.5 w-3.5 text-muted-foreground" />
+                                <div className="flex items-start gap-3">
+                                  {/* Image with upload */}
+                                  <div className="relative group flex-shrink-0">
+                                    {product.image_url ? (
+                                      <img src={product.image_url} alt="" className="w-12 h-12 rounded-md object-cover" />
+                                    ) : (
+                                      <div className="w-12 h-12 rounded-md bg-secondary flex items-center justify-center"><ImageIcon className="h-4 w-4 text-muted-foreground" /></div>
+                                    )}
+                                    <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-md opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                                      <Upload className="h-3.5 w-3.5 text-white" />
                                       <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
                                         const file = e.target.files?.[0];
                                         if (!file) return;
@@ -662,16 +803,49 @@ const AdminDashboard = () => {
                                         }
                                       }} />
                                     </label>
-                                    <Button variant="outline" size="sm" className="text-[10px] h-7" onClick={() => { setVariationProductId(product.id); setVariationDialogOpen(true); }}>
-                                      + Variação
-                                    </Button>
-                                    <button onClick={() => handleToggleProduct(product.id, product.is_active)}>
-                                      {product.is_active ? <ToggleRight className="h-5 w-5 text-primary" /> : <ToggleLeft className="h-5 w-5 text-muted-foreground" />}
-                                    </button>
-                                    <button onClick={() => handleDeleteProduct(product.id)} className="text-destructive hover:text-destructive/80 p-1">
-                                      <Trash2 className="h-3.5 w-3.5" />
-                                    </button>
                                   </div>
+
+                                  {isEditing ? (
+                                    <div className="flex-1 space-y-2">
+                                      <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="bg-secondary border-border text-foreground text-sm h-8" />
+                                      <Textarea value={editDesc} onChange={(e) => setEditDesc(e.target.value)} className="bg-secondary border-border text-foreground text-xs" rows={2} />
+                                      <div className="flex gap-2">
+                                        <Input type="number" step="0.01" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} className="bg-secondary border-border text-foreground text-sm h-8 w-28" />
+                                        <select value={editCatId} onChange={(e) => setEditCatId(e.target.value)} className="bg-secondary border border-border rounded-md px-2 py-1 text-xs text-foreground">
+                                          {storeCategories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                        </select>
+                                      </div>
+                                      <div className="flex gap-1.5">
+                                        <Button size="sm" className="h-7 text-[10px]" onClick={handleSaveProduct}><Check className="h-3 w-3 mr-1" />Salvar</Button>
+                                        <Button size="sm" variant="ghost" className="h-7 text-[10px]" onClick={() => setEditingProductId(null)}><X className="h-3 w-3 mr-1" />Cancelar</Button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2">
+                                        <p className="text-sm font-medium text-foreground">{product.name}</p>
+                                        <span className="text-xs text-primary font-mono">R$ {Number(product.price).toFixed(2).replace(".", ",")}</span>
+                                      </div>
+                                      {product.description && <p className="text-[10px] text-muted-foreground truncate">{product.description}</p>}
+                                    </div>
+                                  )}
+
+                                  {!isEditing && (
+                                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                                      <button onClick={() => startEditProduct(product)} className="p-1.5 rounded-md hover:bg-secondary transition-colors">
+                                        <Pencil className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
+                                      </button>
+                                      <Button variant="outline" size="sm" className="text-[10px] h-7" onClick={() => { setVariationProductId(product.id); setVariationDialogOpen(true); }}>
+                                        + Variação
+                                      </Button>
+                                      <button onClick={() => handleToggleProduct(product.id, product.is_active)}>
+                                        {product.is_active ? <ToggleRight className="h-5 w-5 text-primary" /> : <ToggleLeft className="h-5 w-5 text-muted-foreground" />}
+                                      </button>
+                                      <button onClick={() => handleDeleteProduct(product.id)} className="text-destructive hover:text-destructive/80 p-1">
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                      </button>
+                                    </div>
+                                  )}
                                 </div>
                                 {variations.length > 0 && (
                                   <div className="mt-3 ml-15 flex flex-wrap gap-2">
@@ -692,13 +866,89 @@ const AdminDashboard = () => {
                   )}
                 </div>
               )}
+
+              {/* ── ORDERS TAB ── */}
+              {storeTab === "orders" && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-display font-semibold text-foreground italic">Pedidos</h3>
+                    <span className="text-[10px] text-muted-foreground uppercase tracking-widest">Atualização automática</span>
+                  </div>
+
+                  {storeOrders.length === 0 ? (
+                    <div className="text-center py-12 border border-dashed border-border rounded-lg text-muted-foreground text-sm">
+                      <ClipboardList className="h-10 w-10 mx-auto mb-3 opacity-50" />
+                      Nenhum pedido recebido ainda.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {storeOrders.map(order => {
+                        const items = Array.isArray(order.items) ? order.items : [];
+                        const nextStatus = STATUS_FLOW[STATUS_FLOW.indexOf(order.status) + 1] as OrderStatus | undefined;
+                        return (
+                          <div key={order.id} className="bg-card border border-border rounded-lg p-4">
+                            <div className="flex items-start justify-between mb-3">
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <h4 className="text-sm font-semibold text-foreground">{order.customer_name}</h4>
+                                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${ORDER_STATUS_COLORS[order.status]}`}>
+                                    {ORDER_STATUS_LABELS[order.status]}
+                                  </span>
+                                </div>
+                                <p className="text-[10px] text-muted-foreground mt-0.5">
+                                  {new Date(order.created_at).toLocaleString("pt-BR")}
+                                  {order.customer_phone && ` · ${order.customer_phone}`}
+                                </p>
+                                <p className="text-[10px] text-muted-foreground">
+                                  {order.order_type === "delivery" ? "🚚 Entrega" : order.order_type === "pickup" ? "🏪 Retirada" : "🍽️ Na Mesa"}
+                                  {order.table_number && ` · Mesa ${order.table_number}`}
+                                  {order.address && ` · ${order.address}`}
+                                </p>
+                              </div>
+                              <span className="text-primary font-bold text-sm">R$ {Number(order.total).toFixed(2).replace(".", ",")}</span>
+                            </div>
+
+                            {/* Items */}
+                            <div className="space-y-1 mb-3">
+                              {items.map((item: any, idx: number) => (
+                                <div key={idx} className="text-xs text-foreground/80 flex justify-between">
+                                  <span>
+                                    {item.quantity}x {item.product?.name} ({item.selectedSize?.name})
+                                    {item.addons?.length > 0 && ` + ${item.addons.map((a: any) => a.name).join(", ")}`}
+                                  </span>
+                                  {item.notes && <span className="text-muted-foreground text-[10px] ml-2">📝 {item.notes}</span>}
+                                </div>
+                              ))}
+                            </div>
+
+                            {order.notes && <p className="text-[10px] text-muted-foreground mb-3">📝 {order.notes}</p>}
+
+                            {/* Actions */}
+                            <div className="flex items-center gap-2">
+                              {nextStatus && order.status !== "cancelled" && (
+                                <Button size="sm" className="text-[10px] h-7 bg-primary text-primary-foreground" onClick={() => handleUpdateOrderStatus(order.id, nextStatus)}>
+                                  → {ORDER_STATUS_LABELS[nextStatus]}
+                                </Button>
+                              )}
+                              {order.status !== "cancelled" && order.status !== "delivered" && (
+                                <Button size="sm" variant="ghost" className="text-[10px] h-7 text-destructive" onClick={() => handleUpdateOrderStatus(order.id, "cancelled")}>
+                                  Cancelar
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </main>
       </div>
 
       {/* ─── DIALOGS ─── */}
-      {/* Addon Dialog */}
       <Dialog open={addonDialogOpen} onOpenChange={setAddonDialogOpen}>
         <DialogContent className="bg-card border-border">
           <DialogHeader><DialogTitle className="font-display italic text-foreground">Novo Adicional</DialogTitle></DialogHeader>
@@ -716,7 +966,6 @@ const AdminDashboard = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Variation Dialog */}
       <Dialog open={variationDialogOpen} onOpenChange={setVariationDialogOpen}>
         <DialogContent className="bg-card border-border">
           <DialogHeader><DialogTitle className="font-display italic text-foreground">Nova Variação</DialogTitle></DialogHeader>
