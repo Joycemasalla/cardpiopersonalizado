@@ -44,8 +44,8 @@ export const storeModel = {
     if (error) throw error;
   },
 
-  async update(id: string, fields: Partial<Store>) {
-    const { error } = await supabase.from("stores").update(fields).eq("id", id);
+  async update(id: string, fields: Record<string, unknown>) {
+    const { error } = await supabase.from("stores").update(fields as any).eq("id", id);
     if (error) throw error;
   },
 
