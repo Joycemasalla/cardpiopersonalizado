@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { storeModel } from "@/models/storeModel";
 import { CART_KEY } from "@/lib/constants";
+import { applyStoreTheme, removeStoreTheme } from "@/lib/colors";
 import type { CartItem } from "@/types/store";
 import { toast } from "sonner";
 
