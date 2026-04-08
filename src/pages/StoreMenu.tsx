@@ -16,7 +16,8 @@ import { StoreFooter } from "@/components/menu/StoreFooter";
 const StoreMenu = () => {
   const { slug } = useParams<{ slug: string }>();
   const {
-    store, storeLoading, categories, filteredProducts, selectedProduct, setSelectedProduct,
+    store, storeLoading, hasError, errorMessage,
+    categories, filteredProducts, selectedProduct, setSelectedProduct,
     activeCategory, setActiveCategory, searchQuery, setSearchQuery,
     cartTotal, cartCount, categoryName, handleAddToCart, getAddonsForProduct,
   } = useMenuController(slug);
@@ -31,6 +32,20 @@ const StoreMenu = () => {
     return <div className="min-h-screen flex items-center justify-center bg-background"><div className="animate-pulse text-muted-foreground font-display italic">Carregando cardápio...</div></div>;
   }
 
+  if (hasError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center px-4">
+          <h1 className="text-2xl font-display font-bold text-foreground">Erro ao carregar</h1>
+          <p className="mt-2 text-muted-foreground">{errorMessage}</p>
+          <button onClick={() => window.location.reload()} className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium">
+            Tentar novamente
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (!store) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -41,6 +56,8 @@ const StoreMenu = () => {
       </div>
     );
   }
+
+  const hasCart = cartCount > 0;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -64,7 +81,7 @@ const StoreMenu = () => {
         onSelect={setActiveCategory}
       />
 
-      <main className="container flex-1 pb-32 my-2">
+      <main className={`container flex-1 my-2 ${hasCart ? "pb-24" : "pb-16"}`}>
         <h2 className="text-2xl font-display font-semibold mb-6 text-center text-foreground">{categoryName}</h2>
         {filteredProducts.length === 0 ? (
           <p className="text-center py-12 text-muted-foreground">
@@ -77,8 +94,8 @@ const StoreMenu = () => {
 
       <StoreFooter store={store} />
       <CartBar itemCount={cartCount} total={cartTotal} slug={store.slug} />
-      <ScrollToTopButton />
-      {store.whatsapp && <WhatsAppButton phone={store.whatsapp} />}
+      <ScrollToTopButton hasCart={hasCart} />
+      {store.whatsapp && <WhatsAppButton phone={store.whatsapp} hasCart={hasCart} />}
 
       {selectedProduct && (
         <ProductModal

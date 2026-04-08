@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { storeModel } from "@/models/storeModel";
 import { CART_KEY } from "@/lib/constants";
-import type { Store, CartItem } from "@/types/store";
+import type { CartItem } from "@/types/store";
 import { toast } from "sonner";
 
 export function useCartController(slug: string | undefined) {
@@ -12,6 +13,7 @@ export function useCartController(slug: string | undefined) {
   const [address, setAddress] = useState("");
   const [tableNumber, setTableNumber] = useState("");
   const [orderType, setOrderType] = useState<"delivery" | "pickup" | "dine_in">("delivery");
+  const [isSending, setIsSending] = useState(false);
 
   const { data: store } = useQuery({
     queryKey: ["store", slug],
@@ -42,11 +44,45 @@ export function useCartController(slug: string | undefined) {
   const deliveryFee = orderType === "delivery" ? Number(store?.delivery_fee || 0) : 0;
   const total = subtotal + deliveryFee;
 
-  const handleWhatsAppOrder = () => {
+  const handleWhatsAppOrder = async () => {
     if (!name.trim()) { toast.error("Informe seu nome"); return; }
     if (orderType === "delivery" && !address.trim()) { toast.error("Informe o endereço de entrega"); return; }
     if (orderType === "dine_in" && !tableNumber.trim()) { toast.error("Informe o número da mesa"); return; }
     if (!store?.whatsapp) { toast.error("WhatsApp não configurado"); return; }
+
+    setIsSending(true);
+
+    // Save order to database
+    const { error } = await supabase.from("orders").insert({
+      store_id: store.id,
+      customer_name: name,
+      customer_phone: phone || null,
+      order_type: orderType,
+      table_number: orderType === "dine_in" ? tableNumber : null,
+      address: orderType === "delivery" ? address : null,
+      items: cart.map(item => ({
+        product_name: item.product.name,
+        size_name: item.selectedSize.name,
+        size_price: item.selectedSize.price,
+        addons: item.addons.map(a => ({ name: a.name, price: a.price })),
+        quantity: item.quantity,
+        notes: item.notes || null,
+      })) as any,
+      subtotal,
+      delivery_fee: deliveryFee,
+      total,
+    });
+
+    if (error) {
+      console.error("Erro ao salvar pedido:", error);
+      if (error.message?.includes("row-level security")) {
+        toast.error("A loja está fechada ou em manutenção. Não é possível enviar o pedido.");
+      } else {
+        toast.error("Erro ao registrar pedido. O WhatsApp será aberto mesmo assim.");
+      }
+      setIsSending(false);
+      // Don't return — still open WhatsApp as fallback
+    }
 
     const orderTypeLabel = { delivery: "🚚 Entrega", pickup: "🏪 Retirada", dine_in: "🍽️ Na Mesa" }[orderType];
     const itemsText = cart.map(item => {
@@ -63,6 +99,7 @@ export function useCartController(slug: string | undefined) {
 
     setCart([]);
     localStorage.removeItem(CART_KEY(slug!));
+    setIsSending(false);
     toast.success("Pedido enviado pelo WhatsApp!");
   };
 
@@ -80,5 +117,6 @@ export function useCartController(slug: string | undefined) {
     deliveryFee,
     total,
     handleWhatsAppOrder,
+    isSending,
   };
 }
