@@ -22,6 +22,14 @@ export function useCartController(slug: string | undefined) {
     enabled: !!slug,
   });
 
+  // Apply store theme
+  useEffect(() => {
+    if (store) {
+      applyStoreTheme(store);
+    }
+    return () => removeStoreTheme();
+  }, [store]);
+
   useEffect(() => {
     if (!slug) return;
     try {
