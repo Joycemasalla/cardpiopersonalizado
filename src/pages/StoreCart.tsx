@@ -10,7 +10,7 @@ const StoreCart = () => {
   const {
     store, cart, name, setName, phone, setPhone, address, setAddress,
     tableNumber, setTableNumber, orderType, setOrderType,
-    updateQty, removeItem, subtotal, deliveryFee, total, handleWhatsAppOrder,
+    updateQty, removeItem, subtotal, deliveryFee, total, handleWhatsAppOrder, isSending,
   } = useCartController(slug);
 
   if (!store) {
