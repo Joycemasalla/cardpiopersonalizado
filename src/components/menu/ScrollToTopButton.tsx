@@ -2,7 +2,11 @@ import { useState, useEffect } from "react";
 import { ArrowUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export const ScrollToTopButton = () => {
+interface ScrollToTopButtonProps {
+  hasCart?: boolean;
+}
+
+export const ScrollToTopButton = ({ hasCart }: ScrollToTopButtonProps) => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -23,10 +27,12 @@ export const ScrollToTopButton = () => {
     <Button
       onClick={scrollToTop}
       size="icon"
-      className="fixed bottom-40 right-6 z-40 h-12 w-12 rounded-full shadow-lg bg-muted hover:bg-muted/80 text-foreground"
+      className={`fixed z-40 h-10 w-10 rounded-full shadow-lg bg-muted hover:bg-muted/80 text-foreground ${
+        hasCart ? "bottom-20 left-4" : "bottom-6 left-4"
+      }`}
       aria-label="Voltar ao topo"
     >
-      <ArrowUp className="h-5 w-5" />
+      <ArrowUp className="h-4 w-4" />
     </Button>
   );
 };

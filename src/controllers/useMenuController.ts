@@ -4,7 +4,7 @@ import { storeModel } from "@/models/storeModel";
 import { categoryModel } from "@/models/categoryModel";
 import { productModel } from "@/models/productModel";
 import { CART_KEY } from "@/lib/constants";
-import type { Store, MenuProduct, MenuProductSize, MenuAddon, CartItem } from "@/types/store";
+import type { MenuProduct, MenuProductSize, MenuAddon, CartItem } from "@/types/store";
 
 export function useMenuController(slug: string | undefined) {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -12,7 +12,6 @@ export function useMenuController(slug: string | undefined) {
   const [selectedProduct, setSelectedProduct] = useState<MenuProduct | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Load cart from localStorage
   useEffect(() => {
     if (!slug) return;
     try {
@@ -21,41 +20,46 @@ export function useMenuController(slug: string | undefined) {
     } catch {}
   }, [slug]);
 
-  // Persist cart
   useEffect(() => {
     if (!slug) return;
     localStorage.setItem(CART_KEY(slug), JSON.stringify(cart));
   }, [cart, slug]);
 
-  const { data: store, isLoading: storeLoading } = useQuery({
+  const { data: store, isLoading: storeLoading, isError: storeError, error: storeErrorObj } = useQuery({
     queryKey: ["store", slug],
     queryFn: () => storeModel.fetchBySlug(slug!),
     enabled: !!slug,
   });
 
-  const { data: categories = [] } = useQuery({
+  const { data: categories = [], isError: categoriesError } = useQuery({
     queryKey: ["menu-categories", store?.id],
     queryFn: () => categoryModel.fetchActiveByStore(store!.id),
     enabled: !!store?.id,
   });
 
-  const { data: products = [] } = useQuery({
+  const { data: products = [], isError: productsError } = useQuery({
     queryKey: ["menu-products", store?.id],
     queryFn: () => productModel.fetchActiveByStore(store!.id),
     enabled: !!store?.id,
   });
 
+  const productIds = useMemo(() => products.map(p => p.id), [products]);
+  const categoryIds = useMemo(() => categories.map(c => c.id), [categories]);
+
   const { data: variations = [] } = useQuery({
-    queryKey: ["menu-variations", store?.id],
-    queryFn: () => productModel.fetchActiveVariationsByProducts(products.map(p => p.id)),
-    enabled: products.length > 0,
+    queryKey: ["menu-variations", store?.id, productIds],
+    queryFn: () => productModel.fetchActiveVariationsByProducts(productIds),
+    enabled: productIds.length > 0,
   });
 
   const { data: categoryAddons = [] } = useQuery({
-    queryKey: ["menu-addons", store?.id],
-    queryFn: () => categoryModel.fetchActiveAddonsByCategories(categories.map(c => c.id)),
-    enabled: categories.length > 0,
+    queryKey: ["menu-addons", store?.id, categoryIds],
+    queryFn: () => categoryModel.fetchActiveAddonsByCategories(categoryIds),
+    enabled: categoryIds.length > 0,
   });
+
+  const hasError = storeError || categoriesError || productsError;
+  const errorMessage = storeErrorObj?.message || "Erro ao carregar o cardápio. Tente novamente.";
 
   const menuProducts: MenuProduct[] = useMemo(() => {
     const categoryMap = new Map(categories.map(c => [c.id, c.name]));
@@ -131,6 +135,8 @@ export function useMenuController(slug: string | undefined) {
   return {
     store,
     storeLoading,
+    hasError,
+    errorMessage,
     categories: activeCategories,
     filteredProducts,
     selectedProduct,

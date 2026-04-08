@@ -10,7 +10,7 @@ const StoreCart = () => {
   const {
     store, cart, name, setName, phone, setPhone, address, setAddress,
     tableNumber, setTableNumber, orderType, setOrderType,
-    updateQty, removeItem, subtotal, deliveryFee, total, handleWhatsAppOrder,
+    updateQty, removeItem, subtotal, deliveryFee, total, handleWhatsAppOrder, isSending,
   } = useCartController(slug);
 
   if (!store) {
@@ -117,7 +117,7 @@ const StoreCart = () => {
                   <div className="border-t border-border pt-3 flex justify-between"><span className="font-semibold text-foreground">Total</span><span className="text-2xl font-bold text-primary">R$ {total.toFixed(2).replace(".", ",")}</span></div>
                 </div>
               </div>
-              <Button onClick={handleWhatsAppOrder} disabled={cart.length === 0} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 py-6 text-base font-semibold">
+              <Button onClick={handleWhatsAppOrder} disabled={cart.length === 0 || isSending} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 py-6 text-base font-semibold">
                 <MessageCircle className="mr-2 h-5 w-5" /> Enviar pelo WhatsApp
               </Button>
               <p className="text-center text-[10px] text-muted-foreground uppercase tracking-widest flex items-center justify-center gap-1">
