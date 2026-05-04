@@ -12,6 +12,7 @@ import { ClosedOverlay } from "@/components/menu/ClosedOverlay";
 import { ProductModal } from "@/components/menu/ProductModal";
 import { ScrollToTopButton } from "@/components/menu/ScrollToTopButton";
 import { StoreFooter } from "@/components/menu/StoreFooter";
+import { CookieConsent } from "@/components/menu/CookieConsent";
 
 const StoreMenu = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -96,6 +97,7 @@ const StoreMenu = () => {
       <CartBar itemCount={cartCount} total={cartTotal} slug={store.slug} />
       <ScrollToTopButton hasCart={hasCart} />
       {store.whatsapp && <WhatsAppButton phone={store.whatsapp} hasCart={hasCart} />}
+      <CookieConsent storageKey={`cookie_consent_${store.slug}`} />
 
       {selectedProduct && (
         <ProductModal

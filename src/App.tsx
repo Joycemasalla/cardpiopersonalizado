@@ -9,6 +9,8 @@ import Login from "./pages/Login";
 import StoreMenu from "./pages/StoreMenu";
 import StoreCart from "./pages/StoreCart";
 import AdminDashboard from "./pages/AdminDashboard";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -38,6 +40,8 @@ const App = () => (
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/r/:slug" element={<StoreMenu />} />
           <Route path="/r/:slug/cart" element={<StoreCart />} />
+          <Route path="/privacidade" element={<PrivacyPolicy />} />
+          <Route path="/termos" element={<TermsOfService />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
