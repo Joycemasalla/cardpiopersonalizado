@@ -18,6 +18,7 @@ export interface Store {
   closed_message: string | null;
   maintenance_mode: boolean;
   operating_hours: Record<string, unknown>;
+  show_demo_products?: boolean;
   created_at: string;
   updated_at: string;
 }
