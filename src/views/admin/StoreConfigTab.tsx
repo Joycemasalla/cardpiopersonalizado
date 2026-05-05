@@ -116,6 +116,17 @@ export const StoreConfigTab = ({ store, onUpdate, onUploadImage, onToggleOpen }:
         </button>
         <span className="text-sm text-foreground">{store.is_open ? "Loja Aberta" : "Loja Fechada"}</span>
       </div>
+
+      {/* Toggle demo products */}
+      <div className="flex items-start gap-3 pt-4 border-t border-border">
+        <button onClick={() => onUpdate(store.id, { show_demo_products: !store.show_demo_products })}>
+          {store.show_demo_products ? <ToggleRight className="h-6 w-6 text-primary" /> : <ToggleLeft className="h-6 w-6 text-muted-foreground" />}
+        </button>
+        <div>
+          <p className="text-sm text-foreground">Exibir produtos ilustrativos (Demo)</p>
+          <p className="text-xs text-muted-foreground">Mostra produtos de exemplo no cardápio público para você visualizar o layout. Desative quando publicar de verdade.</p>
+        </div>
+      </div>
     </div>
   );
 };

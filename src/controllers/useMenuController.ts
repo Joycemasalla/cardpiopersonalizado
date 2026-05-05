@@ -5,6 +5,7 @@ import { categoryModel } from "@/models/categoryModel";
 import { productModel } from "@/models/productModel";
 import { CART_KEY } from "@/lib/constants";
 import type { MenuProduct, MenuProductSize, MenuAddon, CartItem } from "@/types/store";
+import { DEMO_PRODUCTS, DEMO_CATEGORIES } from "@/lib/demoProducts";
 
 export function useMenuController(slug: string | undefined) {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -63,7 +64,7 @@ export function useMenuController(slug: string | undefined) {
 
   const menuProducts: MenuProduct[] = useMemo(() => {
     const categoryMap = new Map(categories.map(c => [c.id, c.name]));
-    return products.map(p => {
+    const real = products.map(p => {
       const productVariations = variations.filter(v => v.product_id === p.id);
       const sizes: MenuProductSize[] = productVariations.length > 0
         ? productVariations.map(v => ({ id: v.id, name: v.name, price: Number(v.price) }))
@@ -78,7 +79,9 @@ export function useMenuController(slug: string | undefined) {
         sizes,
       };
     });
-  }, [products, categories, variations]);
+    if (store?.show_demo_products) return [...real, ...DEMO_PRODUCTS];
+    return real;
+  }, [products, categories, variations, store?.show_demo_products]);
 
   const getAddonsForProduct = useCallback((product: MenuProduct): MenuAddon[] => {
     return categoryAddons
@@ -88,8 +91,15 @@ export function useMenuController(slug: string | undefined) {
 
   const activeCategories = useMemo(() => {
     const catIds = new Set(menuProducts.map(p => p.category_id));
-    return categories.filter(c => catIds.has(c.id));
-  }, [categories, menuProducts]);
+    const real = categories.filter(c => catIds.has(c.id));
+    if (!store?.show_demo_products) return real;
+    const demo = DEMO_CATEGORIES.filter(c => catIds.has(c.id)).map(c => ({
+      ...c,
+      store_id: store?.id ?? "",
+      updated_at: c.created_at,
+    }));
+    return [...real, ...demo];
+  }, [categories, menuProducts, store?.show_demo_products, store?.id]);
 
   const handleAddToCart = useCallback((product: MenuProduct, size: MenuProductSize, addons: MenuAddon[], quantity: number, notes?: string) => {
     setCart(prev => {
