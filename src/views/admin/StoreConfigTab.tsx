@@ -40,6 +40,37 @@ export const StoreConfigTab = ({ store, onUpdate, onUploadImage, onToggleOpen }:
         </div>
       </div>
 
+      {/* Name & Slug */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">Nome da Loja</Label>
+          <Input
+            key={`name-${store.id}`}
+            defaultValue={store.name}
+            onBlur={(e) => {
+              const v = e.target.value.trim();
+              if (v && v !== store.name) onUpdate(store.id, { name: v });
+            }}
+            className="bg-secondary border-border text-foreground"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">Link (slug) — /r/...</Label>
+          <Input
+            key={`slug-${store.id}`}
+            defaultValue={store.slug}
+            onBlur={(e) => {
+              const v = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "");
+              if (v && v !== store.slug) onUpdate(store.id, { slug: v });
+              else e.target.value = store.slug;
+            }}
+            placeholder="minha-loja"
+            className="bg-secondary border-border text-foreground font-mono"
+          />
+          <p className="text-[10px] text-muted-foreground">Apenas letras minúsculas, números e hífens. Alterar muda o link público.</p>
+        </div>
+      </div>
+
       {/* Banner */}
       <div className="space-y-2">
         <h3 className="text-xs uppercase tracking-widest text-muted-foreground font-semibold">Banner da Loja</h3>
