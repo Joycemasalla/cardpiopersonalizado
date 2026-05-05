@@ -1,0 +1,1 @@
+ALTER TABLE public.stores ADD COLUMN IF NOT EXISTS show_demo_products boolean NOT NULL DEFAULT false;
