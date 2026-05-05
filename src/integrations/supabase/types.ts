@@ -356,6 +356,7 @@ export type Database = {
           name: string
           operating_hours: Json | null
           pix_key: string | null
+          show_demo_products: boolean
           slug: string
           updated_at: string
           whatsapp: string | null
@@ -379,6 +380,7 @@ export type Database = {
           name: string
           operating_hours?: Json | null
           pix_key?: string | null
+          show_demo_products?: boolean
           slug: string
           updated_at?: string
           whatsapp?: string | null
@@ -402,6 +404,7 @@ export type Database = {
           name?: string
           operating_hours?: Json | null
           pix_key?: string | null
+          show_demo_products?: boolean
           slug?: string
           updated_at?: string
           whatsapp?: string | null
