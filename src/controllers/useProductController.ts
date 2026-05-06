@@ -44,7 +44,7 @@ export function useProductController(storeId: string | null) {
         image_url: imageUrl,
         badge: data.badge ?? null,
         sort_order: products.length,
-      } as any);
+      });
       toast.success("Produto criado!");
       queryClient.invalidateQueries({ queryKey: ["store-products", storeId] });
     } catch (error: any) {
