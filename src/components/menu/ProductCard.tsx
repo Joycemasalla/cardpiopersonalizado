@@ -1,5 +1,6 @@
 import type { MenuProduct } from "@/types/store";
 import { Plus, UtensilsCrossed } from "lucide-react";
+import { ProductBadge } from "./ProductBadge";
 
 interface ProductCardProps {
   product: MenuProduct;
@@ -21,6 +22,11 @@ export const ProductCard = ({ product, onClick }: ProductCardProps) => {
       <div className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-gradient-to-t from-primary/10 to-transparent" />
 
       <div className="relative aspect-[4/3] overflow-hidden">
+        {product.badge && (
+          <div className="absolute top-2 left-2 z-10">
+            <ProductBadge badge={product.badge} />
+          </div>
+        )}
         {product.image_url ? (
           <img
             src={product.image_url}
