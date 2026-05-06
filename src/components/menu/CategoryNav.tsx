@@ -28,25 +28,23 @@ export const CategoryNav = ({ categories, activeCategory, onSelect }: CategoryNa
         >
           Todos
         </button>
-        {categories.map((category) => (
-          {
-            const Icon = getCategoryIcon(category.icon);
-            return (
-              <button
-                key={category.id}
-                onClick={() => onSelect(category.id)}
-                className={`shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
-                  activeCategory === category.id
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "bg-secondary text-muted-foreground hover:bg-secondary/80"
-                }`}
-              >
-                {Icon && <Icon className="h-3.5 w-3.5" />}
-                {category.name}
-              </button>
-            );
-          }
-        )}
+        {categories.map((category) => {
+          const Icon = getCategoryIcon(category.icon);
+          return (
+            <button
+              key={category.id}
+              onClick={() => onSelect(category.id)}
+              className={`shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
+                activeCategory === category.id
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "bg-secondary text-muted-foreground hover:bg-secondary/80"
+              }`}
+            >
+              {Icon && <Icon className="h-3.5 w-3.5" />}
+              {category.name}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
