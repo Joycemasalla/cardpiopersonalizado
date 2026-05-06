@@ -1,5 +1,6 @@
 import type { Store } from "@/types/store";
 import { Clock, Bike } from "lucide-react";
+import type { ReactNode } from "react";
 
 interface StoreInfoBarProps {
   store: Store;
@@ -10,7 +11,7 @@ export const StoreInfoBar = ({ store }: StoreInfoBarProps) => {
   const fee = Number(store.delivery_fee || 0);
   const feeLabel = fee > 0 ? `R$ ${fee.toFixed(2).replace(".", ",")}` : "Grátis";
 
-  const items: { key: string; node: React.ReactNode }[] = [];
+  const items: { key: string; node: ReactNode }[] = [];
 
   items.push({
     key: "status",
