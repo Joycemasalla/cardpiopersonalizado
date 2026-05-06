@@ -38,6 +38,15 @@ export function useCategoryController(storeId: string | null) {
     }
   };
 
+  const updateCategory = async (id: string, fields: { name?: string; icon?: string | null }) => {
+    try {
+      await categoryModel.update(id, fields);
+      queryClient.invalidateQueries({ queryKey: ["store-categories", storeId] });
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
   const createAddon = async (categoryId: string, name: string, price: number) => {
     try {
       const addons = categoryAddons.filter(a => a.category_id === categoryId);
@@ -59,5 +68,5 @@ export function useCategoryController(storeId: string | null) {
     }
   };
 
-  return { categories, categoryAddons, createCategory, deleteCategory, createAddon, deleteAddon };
+  return { categories, categoryAddons, createCategory, updateCategory, deleteCategory, createAddon, deleteAddon };
 }
