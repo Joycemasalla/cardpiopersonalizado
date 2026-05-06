@@ -7,12 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { PRODUCT_BADGE_LIST, getProductBadge } from "@/lib/productBadges";
+import { ProductBadge } from "@/components/menu/ProductBadge";
 
 interface ProductsTabProps {
   categories: StoreCategory[];
   products: StoreProduct[];
   variations: StoreVariation[];
-  onCreateProduct: (data: { categoryId: string; name: string; description?: string; price: number; imageFile?: File | null }) => Promise<void>;
+  onCreateProduct: (data: { categoryId: string; name: string; description?: string; price: number; imageFile?: File | null; badge?: string | null }) => Promise<void>;
   onUpdateProduct: (id: string, fields: Partial<StoreProduct>) => Promise<void>;
   onDeleteProduct: (id: string) => Promise<void>;
   onToggleProduct: (id: string, currentActive: boolean) => Promise<void>;
@@ -39,12 +41,14 @@ export const ProductsTab = ({
   const [newPrice, setNewPrice] = useState("");
   const [newCatId, setNewCatId] = useState("");
   const [newImageFile, setNewImageFile] = useState<File | null>(null);
+  const [newBadge, setNewBadge] = useState<string>("");
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editDesc, setEditDesc] = useState("");
   const [editPrice, setEditPrice] = useState("");
   const [editCatId, setEditCatId] = useState("");
+  const [editBadge, setEditBadge] = useState<string>("");
 
   const [varDialogOpen, setVarDialogOpen] = useState(false);
   const [varProductId, setVarProductId] = useState("");
@@ -57,6 +61,7 @@ export const ProductsTab = ({
     setEditDesc(p.description || "");
     setEditPrice(String(p.price));
     setEditCatId(p.category_id);
+    setEditBadge(p.badge || "");
   };
 
   const handleCreate = async () => {
@@ -66,8 +71,9 @@ export const ProductsTab = ({
       description: newDesc,
       price: parseFloat(newPrice) || 0,
       imageFile: newImageFile,
+      badge: newBadge || null,
     });
-    setNewName(""); setNewDesc(""); setNewPrice(""); setNewCatId(""); setNewImageFile(null);
+    setNewName(""); setNewDesc(""); setNewPrice(""); setNewCatId(""); setNewImageFile(null); setNewBadge("");
     setProductDialogOpen(false);
   };
 
@@ -78,6 +84,7 @@ export const ProductsTab = ({
       description: editDesc || null,
       price: parseFloat(editPrice) || 0,
       category_id: editCatId,
+      badge: editBadge || null,
     });
     setEditingId(null);
   };
@@ -117,6 +124,13 @@ export const ProductsTab = ({
               <div className="space-y-2">
                 <Label className="text-xs uppercase tracking-widest text-muted-foreground">Preço Base (R$)</Label>
                 <Input type="number" step="0.01" value={newPrice} onChange={(e) => setNewPrice(e.target.value)} placeholder="0.00" className="bg-secondary border-border text-foreground" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs uppercase tracking-widest text-muted-foreground">Selo</Label>
+                <select value={newBadge} onChange={(e) => setNewBadge(e.target.value)} className="w-full bg-secondary border border-border rounded-md px-3 py-2 text-sm text-foreground">
+                  <option value="">Sem selo</option>
+                  {PRODUCT_BADGE_LIST.map(b => <option key={b.key} value={b.key}>{b.label}</option>)}
+                </select>
               </div>
               <div className="space-y-2">
                 <Label className="text-xs uppercase tracking-widest text-muted-foreground">Imagem do Produto</Label>
@@ -176,6 +190,10 @@ export const ProductsTab = ({
                             <select value={editCatId} onChange={(e) => setEditCatId(e.target.value)} className="bg-secondary border border-border rounded-md px-2 py-1 text-xs text-foreground">
                               {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                             </select>
+                            <select value={editBadge} onChange={(e) => setEditBadge(e.target.value)} className="bg-secondary border border-border rounded-md px-2 py-1 text-xs text-foreground">
+                              <option value="">Sem selo</option>
+                              {PRODUCT_BADGE_LIST.map(b => <option key={b.key} value={b.key}>{b.label}</option>)}
+                            </select>
                           </div>
                           <div className="flex gap-1.5">
                             <Button size="sm" className="h-7 text-[10px]" onClick={handleSave}><Check className="h-3 w-3 mr-1" />Salvar</Button>
@@ -187,6 +205,7 @@ export const ProductsTab = ({
                           <div className="flex items-center gap-2">
                             <p className="text-sm font-medium text-foreground">{product.name}</p>
                             <span className="text-xs text-primary font-mono">R$ {Number(product.price).toFixed(2).replace(".", ",")}</span>
+                            {product.badge && <ProductBadge badge={product.badge} />}
                           </div>
                           {product.description && <p className="text-[10px] text-muted-foreground truncate">{product.description}</p>}
                         </div>
