@@ -1,10 +1,10 @@
 import type { Category, MenuProduct } from "@/types/store";
 
-export const DEMO_CATEGORIES: Pick<Category, "id" | "name" | "image_url" | "sort_order" | "is_active" | "created_at">[] = [
-  { id: "demo-cat-burgers", name: "Hambúrgueres (Demo)", image_url: null, sort_order: 1, is_active: true, created_at: new Date().toISOString() },
-  { id: "demo-cat-pizzas", name: "Pizzas (Demo)", image_url: null, sort_order: 2, is_active: true, created_at: new Date().toISOString() },
-  { id: "demo-cat-drinks", name: "Bebidas (Demo)", image_url: null, sort_order: 3, is_active: true, created_at: new Date().toISOString() },
-  { id: "demo-cat-desserts", name: "Sobremesas (Demo)", image_url: null, sort_order: 4, is_active: true, created_at: new Date().toISOString() },
+export const DEMO_CATEGORIES: Pick<Category, "id" | "name" | "image_url" | "icon" | "sort_order" | "is_active" | "created_at">[] = [
+  { id: "demo-cat-burgers", name: "Hambúrgueres (Demo)", image_url: null, icon: "sandwich", sort_order: 1, is_active: true, created_at: new Date().toISOString() },
+  { id: "demo-cat-pizzas", name: "Pizzas (Demo)", image_url: null, icon: "pizza", sort_order: 2, is_active: true, created_at: new Date().toISOString() },
+  { id: "demo-cat-drinks", name: "Bebidas (Demo)", image_url: null, icon: "cup-soda", sort_order: 3, is_active: true, created_at: new Date().toISOString() },
+  { id: "demo-cat-desserts", name: "Sobremesas (Demo)", image_url: null, icon: "ice-cream", sort_order: 4, is_active: true, created_at: new Date().toISOString() },
 ];
 
 export const DEMO_PRODUCTS: MenuProduct[] = [
