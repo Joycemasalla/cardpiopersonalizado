@@ -8,6 +8,7 @@ export interface StoreProduct {
   description: string | null;
   price: number;
   image_url: string | null;
+  badge: string | null;
   is_active: boolean;
   sort_order: number;
 }
