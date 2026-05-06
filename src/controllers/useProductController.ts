@@ -24,6 +24,7 @@ export function useProductController(storeId: string | null) {
     description?: string;
     price: number;
     imageFile?: File | null;
+    badge?: string | null;
   }) => {
     if (!data.name || !data.categoryId || !storeId) {
       toast.error("Preencha nome e categoria");
@@ -41,6 +42,7 @@ export function useProductController(storeId: string | null) {
         description: data.description || null,
         price: data.price,
         image_url: imageUrl,
+        badge: data.badge ?? null,
         sort_order: products.length,
       });
       toast.success("Produto criado!");

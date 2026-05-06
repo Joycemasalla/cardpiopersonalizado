@@ -25,7 +25,7 @@ const AdminDashboard = () => {
   const activeStoreId = selectedStoreId || defaultStoreId;
 
   const { stores, createStore, updateStore, uploadImage, toggleStoreOpen } = useStoreController(isPlatformAdmin);
-  const { categories, categoryAddons, createCategory, deleteCategory, createAddon, deleteAddon } = useCategoryController(activeStoreId);
+  const { categories, categoryAddons, createCategory, updateCategory, deleteCategory, createAddon, deleteAddon } = useCategoryController(activeStoreId);
   const { products, variations, createProduct, updateProduct, deleteProduct, toggleProduct, uploadProductImage, createVariation, deleteVariation } = useProductController(activeStoreId);
   const { orders, updateStatus } = useOrderController(activeStoreId, storeTab === "orders");
 
@@ -96,6 +96,7 @@ const AdminDashboard = () => {
               categoryAddons={categoryAddons}
               products={products}
               onCreateCategory={createCategory}
+              onUpdateCategory={updateCategory}
               onDeleteCategory={deleteCategory}
               onCreateAddon={createAddon}
               onDeleteAddon={deleteAddon}

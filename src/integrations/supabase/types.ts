@@ -17,6 +17,7 @@ export type Database = {
       categories: {
         Row: {
           created_at: string
+          icon: string | null
           id: string
           image_url: string | null
           is_active: boolean
@@ -27,6 +28,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          icon?: string | null
           id?: string
           image_url?: string | null
           is_active?: boolean
@@ -37,6 +39,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          icon?: string | null
           id?: string
           image_url?: string | null
           is_active?: boolean
@@ -195,6 +198,7 @@ export type Database = {
       }
       products: {
         Row: {
+          badge: string | null
           category_id: string
           created_at: string
           description: string | null
@@ -209,6 +213,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          badge?: string | null
           category_id: string
           created_at?: string
           description?: string | null
@@ -223,6 +228,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          badge?: string | null
           category_id?: string
           created_at?: string
           description?: string | null

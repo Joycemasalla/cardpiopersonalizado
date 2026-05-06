@@ -5,6 +5,7 @@ export interface StoreCategory {
   store_id: string;
   name: string;
   image_url: string | null;
+  icon: string | null;
   sort_order: number;
   is_active: boolean;
   created_at: string;
@@ -48,6 +49,11 @@ export const categoryModel = {
       name,
       sort_order: sortOrder,
     });
+    if (error) throw error;
+  },
+
+  async update(id: string, fields: Partial<StoreCategory>) {
+    const { error } = await supabase.from("categories").update(fields).eq("id", id);
     if (error) throw error;
   },
 

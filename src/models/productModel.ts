@@ -8,6 +8,7 @@ export interface StoreProduct {
   description: string | null;
   price: number;
   image_url: string | null;
+  badge: string | null;
   is_active: boolean;
   sort_order: number;
 }
@@ -50,6 +51,7 @@ export const productModel = {
     description?: string | null;
     price: number;
     image_url?: string | null;
+    badge?: string | null;
     sort_order: number;
   }) {
     const { error } = await supabase.from("products").insert(data);

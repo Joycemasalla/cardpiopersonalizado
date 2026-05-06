@@ -1,5 +1,6 @@
 import type { Store } from "@/types/store";
 import { MapPin } from "lucide-react";
+import { StoreInfoBar } from "./StoreInfoBar";
 
 interface HeroBannerProps {
   store: Store;
@@ -39,6 +40,9 @@ export const HeroBanner = ({ store }: HeroBannerProps) => {
             {store.address}
           </p>
         )}
+        <div className="mt-4">
+          <StoreInfoBar store={store} />
+        </div>
       </div>
     </section>
   );

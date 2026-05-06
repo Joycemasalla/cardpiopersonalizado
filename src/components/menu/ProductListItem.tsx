@@ -1,5 +1,6 @@
 import type { MenuProduct } from "@/types/store";
 import { Plus, UtensilsCrossed } from "lucide-react";
+import { ProductBadge } from "./ProductBadge";
 
 interface ProductListItemProps {
   product: MenuProduct;
@@ -32,9 +33,12 @@ export const ProductListItem = ({ product, onClick }: ProductListItemProps) => {
         </div>
 
         <div className="flex-1 min-w-0">
-          <h3 className="font-display font-semibold text-foreground line-clamp-1">
-            {product.name}
-          </h3>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="font-display font-semibold text-foreground line-clamp-1">
+              {product.name}
+            </h3>
+            {product.badge && <ProductBadge badge={product.badge} />}
+          </div>
 
           {product.description && (
             <p className="text-muted-foreground text-sm mt-0.5 line-clamp-2">

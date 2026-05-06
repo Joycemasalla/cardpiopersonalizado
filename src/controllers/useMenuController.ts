@@ -76,6 +76,7 @@ export function useMenuController(slug: string | undefined) {
         image_url: p.image_url,
         category_id: p.category_id,
         category_name: categoryMap.get(p.category_id) || "",
+        badge: p.badge ?? null,
         sizes,
       };
     });
