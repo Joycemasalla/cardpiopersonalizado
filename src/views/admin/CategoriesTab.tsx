@@ -6,12 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { IconPicker } from "@/components/admin/IconPicker";
+import { getCategoryIcon } from "@/lib/categoryIcons";
 
 interface CategoriesTabProps {
   categories: StoreCategory[];
   categoryAddons: StoreCategoryAddon[];
   products: StoreProduct[];
   onCreateCategory: (name: string) => Promise<void>;
+  onUpdateCategory: (id: string, fields: { name?: string; icon?: string | null }) => Promise<void>;
   onDeleteCategory: (id: string) => Promise<void>;
   onCreateAddon: (categoryId: string, name: string, price: number) => Promise<void>;
   onDeleteAddon: (id: string) => Promise<void>;
@@ -22,6 +25,7 @@ export const CategoriesTab = ({
   categoryAddons,
   products,
   onCreateCategory,
+  onUpdateCategory,
   onDeleteCategory,
   onCreateAddon,
   onDeleteAddon,
@@ -73,12 +77,22 @@ export const CategoriesTab = ({
         <div className="space-y-3">
           {categories.map((cat) => {
             const addons = categoryAddons.filter(a => a.category_id === cat.id);
+            const Icon = getCategoryIcon(cat.icon);
             return (
               <div key={cat.id} className="bg-card border border-border rounded-lg p-4">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-sm font-semibold text-foreground">{cat.name}</h4>
-                    <p className="text-[10px] text-muted-foreground">{products.filter(p => p.category_id === cat.id).length} produtos · {addons.length} adicionais</p>
+                  <div className="flex items-center gap-3">
+                    {Icon ? (
+                      <div className="w-9 h-9 rounded-md bg-secondary flex items-center justify-center text-primary">
+                        <Icon className="h-4 w-4" />
+                      </div>
+                    ) : (
+                      <div className="w-9 h-9 rounded-md border border-dashed border-border flex items-center justify-center text-[10px] text-muted-foreground">—</div>
+                    )}
+                    <div>
+                      <h4 className="text-sm font-semibold text-foreground">{cat.name}</h4>
+                      <p className="text-[10px] text-muted-foreground">{products.filter(p => p.category_id === cat.id).length} produtos · {addons.length} adicionais</p>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <Button variant="outline" size="sm" className="text-xs" onClick={() => { setAddonCatId(cat.id); setAddonDialogOpen(true); }}>
@@ -88,6 +102,10 @@ export const CategoriesTab = ({
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
+                </div>
+                <div className="mt-3 space-y-2">
+                  <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">Ícone</Label>
+                  <IconPicker value={cat.icon} onChange={(icon) => onUpdateCategory(cat.id, { icon })} />
                 </div>
                 {addons.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-2">
