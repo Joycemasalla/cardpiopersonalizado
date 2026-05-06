@@ -28,6 +28,7 @@ export interface Category {
   store_id: string;
   name: string;
   image_url: string | null;
+  icon?: string | null;
   sort_order: number;
   is_active: boolean;
   created_at: string;
@@ -43,6 +44,7 @@ export interface Product {
   price: number;
   image_url: string | null;
   is_featured: boolean;
+  badge?: string | null;
   is_active: boolean;
   sort_order: number;
   created_at: string;
@@ -90,6 +92,7 @@ export interface MenuProduct {
   image_url: string | null;
   category_id: string;
   category_name: string;
+  badge?: string | null;
   sizes: MenuProductSize[];
 }
 
